@@ -11,6 +11,7 @@
 *.wav filter=lfs diff=lfs merge=lfs -text
 *.xcf filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
+<<<<<<< HEAD
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 # Anything in `/RawContent` dir.
 /RawContent/**/* filter=lfs diff=lfs merge=lfs -text
@@ -18,3 +19,13 @@
 *.pdb filter=lfs diff=lfs merge=lfs -text
 *.ucas filter=lfs diff=lfs merge=lfs -text
 KojiMizuno/UE5マルチプレイヤーゲーム/プレイ動画/マルチプレイTPSプレイ動画.mp4 filter=lfs diff=lfs merge=lfs -text
+=======
+
+# Anything in `/RawContent` dir.
+/RawContent/**/* filter=lfs diff=lfs merge=lfs -text
+
+
+*.exe filter=lfs diff=lfs merge=lfs -text
+*.pdb filter=lfs diff=lfs merge=lfs -text
+*.ucas filter=lfs diff=lfs merge=lfs -text
+>>>>>>> ecabb95b070d35646547d183140f8634469a0c58
