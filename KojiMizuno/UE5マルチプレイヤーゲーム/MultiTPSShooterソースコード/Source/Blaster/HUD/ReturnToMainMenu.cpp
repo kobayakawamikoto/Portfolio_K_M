@@ -8,6 +8,9 @@
 #include "GameFramework/GameModeBase.h"
 #include "Blaster/Character/BlasterCharacter.h"
 
+/*
+* メニュー画面を表示する処理
+*/
 void UReturnToMainMenu::MenuSetup()
 {
 	AddToViewport();
@@ -78,6 +81,9 @@ void UReturnToMainMenu::OnDestroySession(bool bWasSuccessful)
 	}
 }
 
+/*
+* メニュー画面を消す処理
+*/
 void UReturnToMainMenu::MenuTearDown()
 {
 	RemoveFromParent();

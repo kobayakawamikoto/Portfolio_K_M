@@ -66,7 +66,7 @@ protected:
 	float ClientServerDelta = 0.f; // difference between client and server time
 
 	UPROPERTY(EditAnywhere, Category = Time)
-		float TimeSyncFrequency = 5.f;
+		float TimeSyncFrequency = 5.f; // 五秒おきにサーバーと時間を合わせる
 
 	float TimeSyncRunningTime = 0.f;
 	void CheckTimeSync(float DeltaTime);

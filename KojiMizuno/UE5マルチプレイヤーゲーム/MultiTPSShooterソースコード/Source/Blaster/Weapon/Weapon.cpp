@@ -42,6 +42,9 @@ AWeapon::AWeapon()
 	PickupWidget->SetupAttachment(RootComponent);
 }
 
+/*
+* 武器のアウトライン描画
+*/
 void AWeapon::EnableCustomDepth(bool bEnable)
 {
 	if (WeaponMesh)
@@ -124,6 +127,9 @@ void AWeapon::SetHUDAmmo()
 	}
 }
 
+/*
+* 残りの弾を減らす処理
+*/
 void AWeapon::SpendRound()
 {
 	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
@@ -139,7 +145,7 @@ void AWeapon::SpendRound()
 }
 
 
-// 必ずサーバーから呼び出す。するとIsLocallyControlledに該当するアクタ（操作キャラ）が以下のを呼び出す。
+// 必ずサーバーから呼び出す。するとIsLocallyControlledに該当するアクタ（操作キャラ）がこの関数を呼び出す。
 // 呼び出された情報はRPCされる
 void AWeapon::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
 {
@@ -187,11 +193,11 @@ void AWeapon::OnRep_Owner()
 	}
 }
 
+/*
+* サーバーの巻き戻し処理を行うか決める
+*/
 void AWeapon::PollInit()
 {
-	/*ブール値を使用してこれを一度呼び出し、それ以外の場合はブラスターオーナーコントローラーをnullに設定した場合
-	武器をドロップすると、このティック関数は呼び出され続けます*/
-
 	if (!HasSetController && HasAuthority() && BlasterOwnerCharacter && BlasterOwnerCharacter->Controller)
 	{
 		BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(BlasterOwnerCharacter->Controller) : BlasterOwnerController;
@@ -202,7 +208,7 @@ void AWeapon::PollInit()
 		}
 	}
 
-	// ロケランとグレネードランチャーだけサーバーサイドリワインドをオフ
+	// ロケランとグレネードランチャーだけサーバーサイドリワインド(巻き戻し処理)をオフ
 	if (WeaponType == EWeaponType::EWT_RocketLauncher || WeaponType == EWeaponType::EWT_GrenadeLauncher) {
 		bUseServerSideRewind = false;
 	}

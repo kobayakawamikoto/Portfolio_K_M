@@ -18,11 +18,17 @@
 #include "Blaster/HUD/ReturnToMainMenu.h"
 #include "Blaster/BlasterTypes/Announcement.h"
 
+/*
+* クライアント側にプレイヤー撃破の通知
+*/
 void ABlasterPlayerController::BloadcastElim(APlayerState* Attacker, APlayerState* Victim)
 {
 	ClientElimAnnouncement(Attacker, Victim);
 }
 
+/*
+* キルログをクライアント側に通知
+*/
 void ABlasterPlayerController::ClientElimAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)
 {
 	APlayerState* Self = GetPlayerState<APlayerState>();
@@ -74,6 +80,10 @@ void ABlasterPlayerController::Tick(float DeltaTime)
 	CheckPing(DeltaTime);
 }
 
+/*
+* ピンを計算して、ラグのあるプレイヤーに対して巻き戻し処理を行うかを決定する
+* ラグが高いプレイヤーに警告アイコンの表示
+*/
 void ABlasterPlayerController::CheckPing(float DeltaTime)
 {
 	if (HasAuthority()) return;
@@ -233,6 +243,9 @@ void ABlasterPlayerController::ServerReportPingStatus_Implementation(bool bHighP
 	HighPingDelegate.Broadcast(bHighPing);
 }
 
+/*
+* サーバー側とクライアント側の時間を合わせる
+*/
 void ABlasterPlayerController::CheckTimeSync(float DeltaTime)
 {
 	TimeSyncRunningTime += DeltaTime;
@@ -243,6 +256,9 @@ void ABlasterPlayerController::CheckTimeSync(float DeltaTime)
 	}
 }
 
+/*
+* ラグ警告アイコンの表示
+*/
 void ABlasterPlayerController::HighPingWarning()
 {
 	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
@@ -260,6 +276,9 @@ void ABlasterPlayerController::HighPingWarning()
 	}
 }
 
+/*
+* ラグ警告アイコンの非表示
+*/
 void ABlasterPlayerController::StopHighPingWarning()
 {
 	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
@@ -277,6 +296,9 @@ void ABlasterPlayerController::StopHighPingWarning()
 	}
 }
 
+/*
+* ゲーム開始時、サーバー側コントローラーに各マッチステイト毎の時間をゲームモード側から共有する
+*/
 void ABlasterPlayerController::ServerCheckMatchState_Implementation()
 {
 	ABlasterGameMode* GameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
@@ -296,6 +318,9 @@ void ABlasterPlayerController::ServerCheckMatchState_Implementation()
 	}
 }
 
+/*
+* ゲーム開始時、クライアント側コントローラーに各マッチステイト毎の時間をゲームモード側から共有する
+*/
 void ABlasterPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime)
 {
 	WarmupTime = Warmup;
@@ -311,6 +336,10 @@ void ABlasterPlayerController::ClientJoinMidgame_Implementation(FName StateOfMat
 	}
 }
 
+/*
+* シールドと体力を表示する
+* ただしHUDの関係性上、BeginPlayより遅く呼ぶ必要がある(BeginPlayでこれらを設定すると、BlasterCharacterがまだnullのためエラーとなる)
+*/
 void ABlasterPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn); // Posess is later than Beginplay but faster than Blaster HUD Child class(CharacterOverlay)
@@ -499,7 +528,7 @@ void ABlasterPlayerController::SetHUDTime()
 	else if(MatchState == MatchState::InProgress) TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 	else if (MatchState == MatchState::Cooldown) TimeLeft = CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 
-	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft); // Called per second... by FMath::CeilToInt
+	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft); // Update per second... by FMath::CeilToInt
 
 	if (HasAuthority())
 	{
@@ -511,7 +540,7 @@ void ABlasterPlayerController::SetHUDTime()
 		BlasterGameMode = BlasterGameMode == nullptr ? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
 		if (BlasterGameMode)
 		{
-			SecondsLeft = FMath::CeilToInt(BlasterGameMode->GetCountdownTime() + LevelStartingTime);
+			SecondsLeft = FMath::CeilToInt(BlasterGameMode->GetCountdownTime() + BlasterGameMode->GetLevelStartingTime());
 		}
 	}
 
@@ -530,6 +559,9 @@ void ABlasterPlayerController::SetHUDTime()
 	CountdownInt = SecondsLeft;
 }
 
+/*
+* 一度だけ呼ばれる初期化処理
+*/
 void ABlasterPlayerController::PollInit()
 {
 	if (CharacterOverlay == nullptr)
@@ -586,7 +618,7 @@ float ABlasterPlayerController::GetServerTime()
 	else return GetWorld()->GetTimeSeconds() + ClientServerDelta;
 }
 
-void ABlasterPlayerController::ReceivedPlayer() // ?
+void ABlasterPlayerController::ReceivedPlayer()
 {
 	Super::ReceivedPlayer();
 	if (IsLocalController())

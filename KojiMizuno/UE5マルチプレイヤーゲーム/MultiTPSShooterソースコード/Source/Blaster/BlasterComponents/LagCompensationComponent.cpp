@@ -22,6 +22,11 @@ void ULagCompensationComponent::BeginPlay()
 
 }
 
+/*
+* キャラの移動した軌道を保存しておく処理
+* 弾がその時間その場所を通過したかを確認するためのもの
+* ピンが少し高い相手に対して使う
+*/
 FFramePackage ULagCompensationComponent::InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime)
 {
 	const float Distance = YoungerFrame.Time - OlderFrame.Time;
@@ -49,6 +54,10 @@ FFramePackage ULagCompensationComponent::InterpBetweenFrames(const FFramePackage
 	return InterpFramePackage;
 }
 
+/*
+* プレイヤーそのもののコリジョンではなく、プレイヤーの軌道から生成されたコリジョン(残像)に対してのヒット確認
+* サーバーの巻き戻し処理を行うか判断している
+*/
 FServerSideRewindResult ULagCompensationComponent::ConfirmHit(const FFramePackage& Package, ABlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation)
 {
 	if (HitCharacter == nullptr) return FServerSideRewindResult();
@@ -128,6 +137,9 @@ FServerSideRewindResult ULagCompensationComponent::ConfirmHit(const FFramePackag
 	return FServerSideRewindResult{ false, false };
 }
 
+/*
+* 弾のコリジョンではなく、新たに生成したコリジョンでヒット確認を行う
+*/
 FServerSideRewindResult ULagCompensationComponent::ProjectileConfirmHit(const FFramePackage& Package, ABlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
 {
 	FFramePackage CurrentFrame;
@@ -421,6 +433,9 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunServerSideRewin
 	return ShotgunConfirmHit(FramesToCheck, TraceStart, HitLocations);
 }
 
+/*
+* 弾にぶつかったコリジョンの座標と時間を見つけ出す処理
+*/
 FFramePackage ULagCompensationComponent::GetFrameToCheck(ABlasterCharacter* HitCharacter, float HitTime)
 {
 	bool bReturn =
@@ -478,9 +493,11 @@ FFramePackage ULagCompensationComponent::GetFrameToCheck(ABlasterCharacter* HitC
 	return FrameToCheck;
 }
 
+/*
+* 残像部分に対するダメージ判定を行う
+*/
 void ULagCompensationComponent::ServerScoreRequest_Implementation(ABlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
-	
 	FServerSideRewindResult Confirm = ServerSideRewind(HitCharacter, TraceStart, HitLocation, HitTime);
 	if (Character && HitCharacter && Character->GetEquippedWeapon() && Confirm.bHitConfirmed)
 	{

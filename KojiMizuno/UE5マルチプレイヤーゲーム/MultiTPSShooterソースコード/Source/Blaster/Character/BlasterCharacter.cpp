@@ -189,6 +189,9 @@ void ABlasterCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMovementReplication = 0.f;
 }
 
+/*
+* 死亡時呼び出される
+*/
 void ABlasterCharacter::Elim(bool bPlayerLeftGame)
 {
 	DropOrDestroyWeapons();
@@ -206,7 +209,7 @@ void ABlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	bElimmed = true;
 	PlayElimMontage();
 
-	// Start dissolve effect
+	// Start dissolve effect(死亡時のエフェクト)
 	if (DissolveMaterialInstance)
 	{
 		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
@@ -230,12 +233,12 @@ void ABlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	{
 		Combat2->FireButtonPressed(false);
 	}
-	// Disable collision
+	// Disable collision(コリジョンオフ)
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	// Spawn elim bot
+	// Spawn elim bot(ドローンスポーン)
 	if (ElimBotEffect)
 	{
 		FVector ElimBotSpawnPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.f);
@@ -245,6 +248,8 @@ void ABlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	{
 		UGameplayStatics::SpawnSoundAtLocation(this, ElimBotSound, GetActorLocation());
 	}
+
+	// スナイパーのスコープを覗いていたらオフにする
 	bool bHideSniperScope = IsLocallyControlled() &&
 		Combat2 &&
 		Combat2->bAiming &&
@@ -263,6 +268,9 @@ void ABlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ABlasterCharacter::ElimTimerFinished, ElimDelay);
 }
 
+/*
+* 死亡後一定期間後に呼び出される
+*/
 void ABlasterCharacter::ElimTimerFinished()
 {
 	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
@@ -276,6 +284,9 @@ void ABlasterCharacter::ElimTimerFinished()
 	}
 }
 
+/*
+* サーバー側がゲームを離れたとき
+*/
 void ABlasterCharacter::ServerLeaveGame_Implementation()
 {
 	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
@@ -318,6 +329,11 @@ void ABlasterCharacter::DropOrDestroyWeapons()
 	}
 }
 
+/*
+* プレイヤーステートの初期化
+* チームカラーの設定
+* スポーンポイントの設定
+*/
 void ABlasterCharacter::OnPlayerStateInitialized()
 {
 	BlasterPlayerState->AddToScore(0.f);
@@ -352,6 +368,9 @@ void ABlasterCharacter::SetSpawnPoint()
 	}
 }
 
+/*
+* ドローンと武器を消す
+*/
 void ABlasterCharacter::Destroyed()
 {
 	if (ElimBotComponent)
@@ -366,6 +385,9 @@ void ABlasterCharacter::Destroyed()
 	}
 }
 
+/*
+* キルリーダーのエフェクト表示
+*/
 void ABlasterCharacter::MulticastGainedTheLead_Implementation()
 {
 	if (CrownSystem == nullptr) return;
@@ -469,6 +491,9 @@ void ABlasterCharacter::Tick(float DeltaTime)
 	
 }
 
+/*
+* 視点移動時のキャラクターアニメーション
+*/
 void ABlasterCharacter::RotateInPlace(float DeltaTime)
 {
 	if (bDisableGameplay)
@@ -526,6 +551,9 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ABlasterCharacter::GrenadeButtonPressed);
 }
 
+/*
+* 各コンポーネント変数の設定
+*/
 void ABlasterCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents(); /* コンストラクタの後に呼び出される(https://docs.unrealengine.com/5.2/en-US/unreal-engine-actor-lifecycle/)*/
@@ -605,15 +633,18 @@ void ABlasterCharacter::PlayReloadMontage()
 		AnimInstance->Montage_JumpToSection(SectionName);
 
 		// モンタージュの再生中に途切れた場合の処理(主にリロード中に被撃時、ステートがリロードのままになることを防ぐ)
+		// UAnimInstance::TriggerMontageEndedEvent
 		CompleteDelegate.BindWeakLambda(this, [this](UAnimMontage* animMontage, bool bInterrupted)->void
 			{
 				if (bInterrupted)
 				{
+					UE_LOG(LogTemp, Warning, TEXT("We were interrupted"));
 					// We didnt finish playing this animation
 					Combat2->IntrupttedFinishReloading();
 				}
 				else
 				{
+					UE_LOG(LogTemp, Warning, TEXT("We completed"));
 					// animation finished
 				}
 			});
@@ -677,6 +708,9 @@ void ABlasterCharacter::GrenadeButtonPressed()
 	}
 }
 
+/*
+* ダメージ処理
+*/
 void ABlasterCharacter::ReceiveDamage(AActor* DamageActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser)
 {
 	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
@@ -746,6 +780,9 @@ void ABlasterCharacter::LookUp(float Value)
 	AddControllerPitchInput(Value);
 }
 
+/*
+* 拾うボタン押下時(EKey)
+*/
 void ABlasterCharacter::EquipButtonPressed()
 {
 	if (bDisableGameplay) return;
@@ -833,6 +870,9 @@ float ABlasterCharacter::CalculateSpeed()
 	return Velocity.Size();
 }
 
+/*
+* エイムオフセット（視点移動）の処理
+*/
 void ABlasterCharacter::AimOffset(float DeltaTime)
 {
 	if (Combat2 && Combat2->EquippedWeapon == nullptr) return;
@@ -864,6 +904,10 @@ void ABlasterCharacter::AimOffset(float DeltaTime)
 	CalculateAO_Pitch();
 }
 
+/*
+* 操作キャラだけに関わるPitch部分の処理
+* 操作キャラとそれ以外のキャラでエイムオフセットのレプリケーションを分けているのは、帯域幅を節約するため
+*/
 void ABlasterCharacter::CalculateAO_Pitch()
 {
 	AO_Pitch = GetBaseAimRotation().Pitch;
@@ -887,6 +931,9 @@ void ABlasterCharacter::CalculateAO_Pitch()
 	}
 }
 
+/*
+* 操作キャラ以外のターンプレイスステイトを変更する処理
+*/
 void ABlasterCharacter::SimProxiesTurn()
 {
 	if (Combat2 == nullptr && Combat2->EquippedWeapon == nullptr) return;
@@ -957,6 +1004,9 @@ void ABlasterCharacter::FireButtonReleased()
 	}
 }
 
+/*
+* 操作キャラのターンプレイスステイトを変更する処理
+*/
 void ABlasterCharacter::TurnInPlace(float DeltaTime)
 {
 	if (AO_Yaw > 90.f)
@@ -985,6 +1035,9 @@ void ABlasterCharacter::MulticastHit_Implementation()
 	PlayHitReactMontage();
 }*/
 
+/*
+* キャラとカメラが近いとき、キャラを非表示に
+*/
 void ABlasterCharacter::HideCameraIfCharacterClose()
 {
 	if (!IsLocallyControlled()) return;
@@ -1076,6 +1129,10 @@ void ABlasterCharacter::SpawDefaultWeapon()
 	}
 }
 
+/*
+* 一度だけ呼ばれる初期化処理
+* ゲームに途中参加したプレイヤー用
+*/
 void ABlasterCharacter::PollInit()
 {
 	if (BlasterPlayerState == nullptr)
@@ -1187,7 +1244,7 @@ bool ABlasterCharacter::IsLocallyReloading()
 	return Combat2->bLocallyReloading;
 }
 
-bool ABlasterCharacter::IsHoldingTheFlag() const
+bool ABlasterCharacter::IsHoldingTheFlag()
 {
 	if (Combat2 == nullptr) return false;
 	return Combat2->bHoldingTheFlag;

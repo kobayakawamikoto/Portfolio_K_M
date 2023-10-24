@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Blaster/PlayerState/BlasterPlayerState.h"
 #include "Blaster/GameState/BlasterGameState.h"
+#include "MultiplayerSessionsSubsystem.h"
 
 namespace MatchState
 {
@@ -53,6 +54,34 @@ void ABlasterGameMode::Tick(float DeltaTime)
 		if (CountdownTime <= 0.f)
 		{
 			RestartGame();
+			/*
+			UGameInstance* GameInstance = GetGameInstance();
+			if (GameInstance)
+			{
+				UMultiplayerSessionsSubsystem* Subsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
+				check(Subsystem);
+
+				UWorld* World = GetWorld();
+				if (World)
+				{
+					//bUseSeamlessTravel = true;
+
+					FString MatchType = Subsystem->DesiredMatchType;
+					if (MatchType == "FreeForAll")
+					{
+						World->ServerTravel(FString("/Game/Maps/FreeForAll?listen"));
+					}
+					else if (MatchType == "Teams")
+					{
+						World->ServerTravel(FString("/Game/Maps/Teams?listen"));
+					}
+					else if (MatchType == "CaptureTheFlag")
+					{
+						World->ServerTravel(FString("/Game/Maps/CaptureTheFlag?listen"));
+					}
+				}
+			}
+			*/
 		}
 	}
 }
@@ -76,6 +105,9 @@ float ABlasterGameMode::CalculateDamage(AController* Attacker, AController* Vict
 	return BaseDamage;
 }
 
+/*
+* 死亡時の処理
+*/
 void ABlasterGameMode::PlayerEliminated(class ABlasterCharacter* ElimmedCharacter, class ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController)
 {
 	if (AttackerController == nullptr || AttackerController->PlayerState == nullptr) return;
@@ -136,6 +168,9 @@ void ABlasterGameMode::PlayerEliminated(class ABlasterCharacter* ElimmedCharacte
 	}
 }
 
+/*
+* リスポーン処理
+*/
 void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
 {
 	if (ElimmedCharacter)
@@ -146,9 +181,11 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 	if (ElimmedController)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("ElimmedController valid"))
+		// マップに配置されている全てのプレイヤースタートを取得
 		TArray<AActor*>AllPlayerStarts;
 		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), AllPlayerStarts);
 
+		// 全てのプレイヤーを取得
 		TArray<AActor*>Characters;
 		UGameplayStatics::GetAllActorsOfClass(this, ABlasterCharacter::StaticClass(), Characters);
 
@@ -156,27 +193,31 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 
 		for (int i = 0; i < AllPlayerStarts.Num(); i++)
 		{
+			// キャラクター0(リスポーンする人)とプレイヤースタート[i]との距離を取得
 			float MinDistance = (AllPlayerStarts[i]->GetActorLocation() - Characters[0]->GetActorLocation()).Size();
 			for (int j = 1; j < Characters.Num(); j++)
 			{
-				// プレイヤー0とプレイヤースタート[i]との距離 vs その他のプレイヤーとプレイヤースタート[i]との距離
+				// 'キャラクター0(リスポーンする人)とプレイヤースタート[i]'と'の距離と全てのキャラクターとプレイヤースタート[i]との距離'を比較する
 				float Distance = (AllPlayerStarts[i]->GetActorLocation() - Characters[j]->GetActorLocation()).Size();
 				if (Distance < MinDistance)
 				{
-					MinDistance = Distance; // プレイヤースタート[i]と全てのプレイヤーを比較した後の一番小さい距離
+					// 現時点での一番小さな距離が取得される
+					MinDistance = Distance;
 				}
 			}
+			// プレイヤースタートの個数分追加するようにする
+			// これは次の処理で、何番目のプレイヤースタートが一番離れているかを指定するために必要なため(Selection部分)
 			StockedDistances.Add(MinDistance);
 		}
 
 		float MaxDistance = StockedDistances[0];
-		int32 Selection = 0;
+		int32 Selection = 0; // 一番離れているプレイヤースタートを指定するための変数
 
 		for (int i = 1; i < StockedDistances.Num(); i++)
 		{
+			// StockedDistancesの中で一番値が大きい物を選別
 			if (MaxDistance < StockedDistances[i])
 			{
-				// StockedDistancesの中で一番値が大きい物を選別
 				MaxDistance = StockedDistances[i];
 				Selection = i;
 			}
@@ -191,6 +232,9 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 	}
 }
 
+/*
+* プレイヤー退出時の処理
+*/
 void ABlasterGameMode::PlayerLeftGame(ABlasterPlayerState* PlayerLeaving)
 {
 	if (PlayerLeaving == nullptr) return;

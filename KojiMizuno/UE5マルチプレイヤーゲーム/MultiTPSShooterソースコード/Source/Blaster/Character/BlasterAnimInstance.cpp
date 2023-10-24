@@ -41,6 +41,7 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bElimmed = BlasterCharacter->IsElimmed();
 	bHoldingTheFlag = BlasterCharacter->IsHoldingTheFlag();
 
+	// Yaw’l‚Ì•âŠÔ(‚È‚ß‚ç‚©‚É’l‚ª•Ï‰»‚·‚é‚æ‚¤‚É‚µ‚Ä‚¢‚é)
 	// Offset Yaw for Strafing
 	FRotator AimRotation = BlasterCharacter->GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(BlasterCharacter->GetVelocity());
@@ -48,10 +49,11 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	DeltaRotaion = FMath::RInterpTo(DeltaRotaion, DeltaRot, DeltaTime, 6.f);
 	YawOffset = DeltaRotaion.Yaw;
 
+	// Lean’l‚Ì•âŠÔ(‚È‚ß‚ç‚©‚É’l‚ª•Ï‰»‚·‚é‚æ‚¤‚É‚µ‚Ä‚¢‚é)
 	CharacterRotationLastFrame = CharacterRotation;
 	CharacterRotation = BlasterCharacter->GetActorRotation();
 	const FRotator Delta = UKismetMathLibrary::NormalizedDeltaRotator(CharacterRotation, CharacterRotationLastFrame);
-	const float Target = Delta.Yaw / DeltaTime; // ‰ñ“]‚·‚ê‚Î‚·‚é‚Ù‚Ç‚Å‚©‚­‚È‚é
+	const float Target = Delta.Yaw / DeltaTime; // ‰ñ“]‚·‚ê‚Î‚·‚é‚Ù‚Ç”’l‚ª‘å‚«‚­‚È‚é
 	const float Interp = FMath::FInterpTo(Lean, Target, DeltaTime, 6.f);
 	Lean = FMath::Clamp(Interp, -90.f, 90.f);
 
@@ -61,6 +63,8 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	AO_Yaw = BlasterCharacter->GetAO_Yaw();
 	AO_Pitch = BlasterCharacter->GetAO_Pitch();
 
+	// •Ší‚ÌŒü‚«‚ÌÝ’è
+	// ‰EŽè‚É•Ší‚ÌŽ‚¿Žè‚ª—ˆ‚é‚æ‚¤‚ÉÝ’è‚µ‚Ä‚¢‚é
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && BlasterCharacter->GetMesh())
 	{
 		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
@@ -85,6 +89,7 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		//DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), MuzzleTipTransform.GetLocation() + MuzzleX * 1000.f, FColor::Red);
 		//DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), BlasterCharacter->GetHitTarget(), FColor::Orange);
 
+		// ¶Žè‚ð•Ší‚É’Ç]‚³‚¹‚é
 		bUseFABRIK = BlasterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;
 		bool bFABRIKOverride = BlasterCharacter->IsLocallyControlled() &&
 			BlasterCharacter->GetCombatState() != ECombatState::ECS_ThrowingGrenade &&

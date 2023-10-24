@@ -14,8 +14,10 @@ ATeamsGameMode::ATeamsGameMode()
 	bTeamsMatch = true;
 }
 
-// PostLoginが先に呼ばれるため、HandleMatchHasStartedクラスが呼ばれない。
-// クラスを別にするか追加の処理を入れる必要がある？
+/*
+* ブルーチームとレッドチームに振り分ける処理
+* ゲーム開始時に呼び出される
+*/
 void ATeamsGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -53,6 +55,10 @@ void ATeamsGameMode::PostLogin(APlayerController* NewPlayer)
 	}
 }
 
+/*
+* チームからプレイヤーを取り除く処理
+* ゲームから抜けると呼び出される
+*/
 void ATeamsGameMode::Logout(AController* Exiting)
 {
 	ABlasterGameState* BGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
@@ -71,6 +77,10 @@ void ATeamsGameMode::Logout(AController* Exiting)
 
 }
 
+/*
+* ブルーチームとレッドチームに振り分ける処理
+* 途中参加時に呼び出される
+*/
 void ATeamsGameMode::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();
@@ -99,6 +109,9 @@ void ATeamsGameMode::HandleMatchHasStarted()
 	}
 }
 
+/*
+* フレンドリーファイアをオフにする処理
+*/
 float ATeamsGameMode::CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage)
 {
 	ABlasterPlayerState* AttackerPState = Attacker->GetPlayerState<ABlasterPlayerState>();
@@ -115,6 +128,9 @@ float ATeamsGameMode::CalculateDamage(AController* Attacker, AController* Victim
 	return BaseDamage;
 }
 
+/*
+* チームスコアを足す処理
+*/
 void ATeamsGameMode::PlayerEliminated(ABlasterCharacter* ElimmedCharacter, ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController)
 {
 	Super::PlayerEliminated(ElimmedCharacter, VictimController, AttackerController);

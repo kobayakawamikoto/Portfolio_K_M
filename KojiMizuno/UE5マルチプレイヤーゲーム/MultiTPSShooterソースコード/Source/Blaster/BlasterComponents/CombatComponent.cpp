@@ -447,6 +447,7 @@ void UCombatComponent::FinishReloading()
 void UCombatComponent::IntrupttedFinishReloading()
 {
 	if (Character == nullptr) return;
+	bLocallyReloading = false;
 	if (Character->HasAuthority())
 	{
 		CombatState = ECombatState::ECS_Unoccupied;

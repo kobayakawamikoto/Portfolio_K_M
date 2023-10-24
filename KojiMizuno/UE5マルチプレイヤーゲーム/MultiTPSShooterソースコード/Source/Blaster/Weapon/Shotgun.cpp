@@ -146,7 +146,6 @@ void AShotgun::ShotgunTraceEndWithScatter(const FVector& HitTarget, TArray<FVect
 	const FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
 
 	// TODO: 以下のfor文では弾丸の位置をランダムでその都度計算しているが、予め作成しておいたいくつかの配列パターンを用意して使用した方が帯域幅を節約できそう
-	// これは他の武器でも言える
 	for (uint32 i = 0; i < NumberOfPellets; i++)
 	{
 		const FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);

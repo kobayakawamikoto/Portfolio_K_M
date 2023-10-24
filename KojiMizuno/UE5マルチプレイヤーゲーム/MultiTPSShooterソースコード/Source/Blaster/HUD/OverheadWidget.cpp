@@ -1,5 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
+/*
+* プレイヤーがどのロールにあるか確認するデバッグ用クラス
+*/
 
 #include "OverheadWidget.h"
 #include "Components/TextBlock.h"

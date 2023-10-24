@@ -16,6 +16,9 @@ void ABlasterHUD::BeginPlay()
 
 }
 
+/*
+* キルログの処理
+*/
 void ABlasterHUD::AddElimAnnouncement(FString Attacker, FString Victim)
 {
 	OwningPlayer = OwningPlayer == nullptr ? GetOwningPlayerController() : OwningPlayer;
@@ -59,6 +62,9 @@ void ABlasterHUD::AddElimAnnouncement(FString Attacker, FString Victim)
 	}
 }
 
+/*
+* キルログ消去時の処理
+*/
 void ABlasterHUD::ElimAnnouncementTimerFinished(UElimAnnouncement* MsgToRemove)
 {
 	if (MsgToRemove)
@@ -67,6 +73,9 @@ void ABlasterHUD::ElimAnnouncementTimerFinished(UElimAnnouncement* MsgToRemove)
 	}
 }
 
+/*
+* UIの描画
+*/
 void ABlasterHUD::AddCharacterOverlay()
 {
 	APlayerController* PlayerController = GetOwningPlayerController();
@@ -77,6 +86,9 @@ void ABlasterHUD::AddCharacterOverlay()
 	}
 }
 
+/*
+* アナウンス文字の描画
+*/
 void ABlasterHUD::AddAnnouncement()
 {
 	APlayerController* PlayerController = GetOwningPlayerController();
@@ -87,7 +99,9 @@ void ABlasterHUD::AddAnnouncement()
 	}
 }
 
-
+/*
+* クロスヘア描画
+*/
 void ABlasterHUD::DrawHUD()
 {
 	Super::DrawHUD(); // Be called like a Tick

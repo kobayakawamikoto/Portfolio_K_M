@@ -15,6 +15,9 @@ void ABlasterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ABlasterGameState, BlueTeamScore);
 }
 
+/*
+* トップスコア者の判別処理
+*/
 void ABlasterGameState::UpdateTopScore(class ABlasterPlayerState* ScoringPlayer)
 {
 	if (TopScoringPlayers.Num() == 0)
