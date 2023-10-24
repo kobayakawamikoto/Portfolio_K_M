@@ -17,7 +17,7 @@ Gimmick_Save::~Gimmick_Save()
 	Finalize();
 }
 
-void Gimmick_Save::Initialize()
+void Gimmick_Save::Initialize(Vector2D initialVec)
 {
 	__super::Initialize();
 
@@ -25,14 +25,14 @@ void Gimmick_Save::Initialize()
 	bcp = new BoxCollisionParams();
 
 	// ‰ŠúÀ•Wİ’è
-	Vector2D initialVec;
-	initialVec.x = 500.f;
-	initialVec.y = 100.f;
+	//Vector2D initialVec;
+	//initialVec.x = 500.f;
+	//initialVec.y = 100.f;
 	SetPosition(initialVec);
 
 	// ‰æ‘œ‚Ì“Ç‚İ‚İ
-	loaded_save = LoadGraph("Resources/Images/save.png");
-	loaded_saved = LoadGraph("Resources/Images/saved.png");
+	loaded_save_handle = LoadGraph("Resources/Images/save.png");
+	loaded_saved_handle = LoadGraph("Resources/Images/saved.png");
 }
 
 void Gimmick_Save::Update(float delta_seconds)
@@ -68,17 +68,19 @@ void Gimmick_Save::Draw(const Vector2D& screen_offset)
 	// ‰æ‘œ‚Ì•`‰æ
 	int x, y;
 	GetPosition().ToInt(x, y);
-	DrawGraph(static_cast<int>(GetPosition().x - 14.f - screen_offset.x), static_cast<int>(GetPosition().y - 10.f - screen_offset.y), loaded_save, true);
+	DrawGraph(static_cast<int>(GetPosition().x - 14.f - screen_offset.x), static_cast<int>(GetPosition().y - 10.f - screen_offset.y), loaded_save_handle, true);
 
 	if (isSaved) // Â‚­“_“”
 	{
-		DrawGraph(static_cast<int>(GetPosition().x - 14.f - screen_offset.x), static_cast<int>(GetPosition().y - 10.f - screen_offset.y), loaded_saved, true);
+		DrawGraph(static_cast<int>(GetPosition().x - 14.f - screen_offset.x), static_cast<int>(GetPosition().y - 10.f - screen_offset.y), loaded_saved_handle, true);
 	}
-	//DrawBox(static_cast<int>(GetPosition().x - 14.f - screen_offset.x), static_cast<int>(GetPosition().y - 10.f - screen_offset.y),
-		//static_cast<int>(GetPosition().x - 14.f + 27 - screen_offset.x), static_cast<int>(GetPosition().y - 10.f + 60 - screen_offset.y), 100, false);
 }
 
 void Gimmick_Save::Finalize()
 {
 	__super::Finalize();
+
+	// ‰æ‘œ‚Ì”jŠü
+	DeleteGraph(loaded_save_handle);
+	DeleteGraph(loaded_saved_handle);
 }

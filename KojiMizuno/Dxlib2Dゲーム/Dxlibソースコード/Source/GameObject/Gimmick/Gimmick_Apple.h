@@ -29,7 +29,7 @@ private:
 	BoxCollisionParams* bcp;
 
 	// ‰æ‘œ
-	int loaded_apple;
+	int loaded_apple_handle;
 
 	bool isPlayerChecked;
 

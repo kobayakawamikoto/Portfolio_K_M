@@ -10,11 +10,11 @@
  * サンプルオブジェクト
  * サンプル用に簡易的に実装
  */
-class Gimmick_Save : public GameObject
+class Gimmick_FakeGoalFlag : public GameObject
 {
 public:
-	Gimmick_Save();
-	virtual ~Gimmick_Save();
+	Gimmick_FakeGoalFlag();
+	virtual ~Gimmick_FakeGoalFlag();
 
 public:
 	//~ Begin GameObject interface
@@ -28,10 +28,10 @@ private:
 	SampleObject* sampleObject_;
 	BoxCollisionParams* bcp;
 
-	// 画像
-	int loaded_save_handle;
-	int loaded_saved_handle;
+	// 各画像用
+	int loaded_goal_flag;
+	int loaded_windows;
 
-	bool isSaved;
-	float saveCount;
+	bool isFakeCleared;
+	Vector2D delta_position;
 };

@@ -56,9 +56,9 @@ private:
 
 	// アニメーション関連
 	int motion_index = 0;
-	int act_idle[24] = { 0, 1, 3, 2, 3, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
+	int act_idle[24] = { 0, 1, 3, 2, 3, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0 };
 	int act_run[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
-	int act_attack[3] = {24, 25, 26};
+	int act_attack[3] = { 24, 25, 26 };
 	int act_jump[13] = { 16, 17, 18, 19, 20, 21, 21, 21, 21, 21, 21, 21, 21 };
 	int chara_act[30];
 	const int ACT_SPEED = 5;
@@ -72,12 +72,13 @@ private:
 	Ground* ground;
 	BoxCollisionParams* bcp;
 	SavePosition* savePosition;
-	Vector2D delta_position;
 
+	Vector2D delta_position;
 	Vector2D yadd = Vector2D();
 	Vector2D jump = Vector2D();
 	Vector2D gravity = Vector2D();
-	// ジャンプ関係
+
+	// ジャンプと接地
 	bool canJump = false;
 	float jumpTime = 0;
 	int jumpCount = 0;
@@ -107,7 +108,7 @@ private:
 	float randomVal[501]{};
 	float prev_blood_x[501]{};
 	float prev_blood_y[501]{};
-	
+
 	float addyadd = 0;
 	float addyaddClamp = 0;
 
@@ -121,6 +122,7 @@ private:
 	int clearSound = 0;
 	bool isCleared = false;
 
+	void Move(float delta_seconds);
 	void Attack(float delta_seconds);
 	void Jump();
 	void DetectManualMapchip();
@@ -132,7 +134,7 @@ private:
 	void HitFromBelow_blood(int j, int k);
 	void HitFromSide_blood(int k);
 	void Bleed();
-	
+
 
 public:
 	float offset_pos_x = 14.f; // Playerのコリジョン用X座標を得るためのオフセット
@@ -143,10 +145,18 @@ public:
 	float prev_y = 0.f; // Playerの約1フレーム前のY座標
 	void Dead();
 	void Clear();
+	void FakeClear();
 	void Save();
-	
+
 	BULLET GetBullet(int i) { return bullet[i]; }
 	void SetBullet_x(int i, float x) { bullet[i].x = x; }
 	void SetBullet_y(int i, float y) { bullet[i].y = y; }
 	void SetIsCleared(bool isCleared_) { isCleared = isCleared_; }
+	void SetPlayerState(PlayerState playerState_) { playerState = playerState_; }
+	void SetIsGround(bool isGround_) { isGround = isGround_; }
+	void SetCanJump(bool canJump_) { canJump = canJump_; }
+	void SetJumpTime(float jumpTime_) { jumpTime = jumpTime_; }
+	void SetJumpCount(int jumpCount_) { jumpCount = jumpCount_; }
+	void SetYAdd(Vector2D yadd_) { yadd = yadd_; }
+	void GroundBool();
 };

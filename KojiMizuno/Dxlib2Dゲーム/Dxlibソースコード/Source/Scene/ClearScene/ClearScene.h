@@ -1,15 +1,16 @@
 #pragma once
 
 #include "../SceneBase.h"
+#include "../Source/Utility/SavePosition.h"
 
 /**
  * タイトルシーン
  */
-class TitleScene : public SceneBase
+class ClearScene : public SceneBase
 {
 public:
-	TitleScene();
-	virtual ~TitleScene() {}
+	ClearScene();
+	virtual ~ClearScene() {}
 
 public:
 	//~ Begin CSceneBase interface
@@ -17,10 +18,10 @@ public:
 	virtual SceneType Update(float delta_seconds) override;
 	virtual void Draw() override;
 	virtual void Finalize() override;
-	virtual SceneType GetSceneType() const override { return SceneType::TITLE_SCENE; }
+	virtual SceneType GetSceneType() const override { return SceneType::CLEAR_SCENE; }
 	//~ End SceneBase interface
 
 private:
-	int loaded_title_handle;
+	SavePosition* savePosition;
 	unsigned int Cr;
 };

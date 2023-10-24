@@ -13,6 +13,7 @@ enum class SceneType : unsigned short
 {
 	TITLE_SCENE,
 	SAMPLE_SCENE,
+	CLEAR_SCENE,
 };
 
 /**
@@ -37,7 +38,7 @@ public:
 	 */
 	virtual SceneType Update(float delta_seconds);
 
-	/** 
+	/**
 	 * 描画
 	 */
 	virtual void Draw();
@@ -104,6 +105,30 @@ public:
 		new_object->SetOwnerScene(this);
 		new_object->SetPosition(position);
 		new_object->Initialize(initialVec, add_x, add_y, direction);
+		objects.push_back(new_object);
+
+		return new_instance;
+	}
+
+	template <class T>
+	T* CreateObject(const Vector2D& position, Vector2D initialVec)
+	{
+		// GameObjectの生成
+		T* new_instance = new T();
+		GameObject* new_object = dynamic_cast<GameObject*>(new_instance); // 同じGameObjectのポインタを参照させるため
+
+		// GameObjectを派生していない場合は、破棄して終了する
+		if (new_object == nullptr)
+		{
+			//派生していないクラスのため、生成しない
+			delete new_instance;
+			return nullptr;
+		}
+
+		// GameObjectの初期化
+		new_object->SetOwnerScene(this);
+		new_object->SetPosition(position);
+		new_object->Initialize(initialVec);
 		objects.push_back(new_object);
 
 		return new_instance;

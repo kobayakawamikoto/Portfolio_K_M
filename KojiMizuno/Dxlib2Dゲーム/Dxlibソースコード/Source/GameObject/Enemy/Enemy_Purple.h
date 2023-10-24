@@ -5,15 +5,9 @@
 #include "../Source/Utility/BoxCollisionParams.h"
 #include "../SampleObject/SampleObject.h"
 #include <string>
+#include "EnemyState.h"
 
-enum class EnemyState {
-	IDLE,
-	RUN,
-	JUMP,
-	ATTACK,
-	DAMAGE,
-	DEAD
-};
+
 
 class Enemy_Purple : public GameObject
 {
@@ -38,7 +32,7 @@ private:
 	// 画像
 	int loaded_sprite_handle;
 
-	// アニメーション
+	// アニメーション用
 	int motion_index = 0;
 	int act_idle[4] = { 0, 0, 0, 0 };
 	int act_run[4] = { 4, 5, 6, 7 };
@@ -56,13 +50,15 @@ private:
 	void Chara_AnimFrame();
 	
 	Vector2D delta_position = Vector2D();
+
 	// 前フレームの座標
 	float prev_x = 0;
 	float prev_y = 0;
 	Vector2D yadd = Vector2D();
 	Vector2D jump = Vector2D();
 	Vector2D gravity = Vector2D();
-	// ジャンプ
+
+	// ジャンプと接地ステート
 	bool canJump = false;
 	float jumpTime = 0;
 	int jumpCount = 0;
@@ -73,8 +69,6 @@ private:
 	int remainingJumps = 0;
 	int maxJumpCount = 2;
 
-	std::string hitTop;
-	std::string hitSide;
 	int hp = 3;
 	// initialでキャッシュする座標
 	float prevPosition_x = 0;
@@ -90,7 +84,8 @@ private:
 	int deadSound = 0;
 
 	// コリジョン
-	void DetectPlayer();
+	void HitPlayer();
 	void HitBullet();
 	void DetectMapchip();
+	void Move(float delta_seconds);
 };

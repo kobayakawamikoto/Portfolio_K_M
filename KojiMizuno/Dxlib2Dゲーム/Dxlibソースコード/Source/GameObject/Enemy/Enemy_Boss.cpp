@@ -1,28 +1,34 @@
-#include "Enemy_Purple.h"
+#include "Enemy_Boss.h"
 #include "../Ground/Ground.h"
 #include "../Source/Utility/BoxCollisionParams.h"
 #include "../SampleObject/SampleObject.h"
 #include "../Source/Scene/SampleScene/SampleScene.h"
 #include <algorithm>
+#include <random>
+#include <vector>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <cmath>
 #define NOMINMAX
 #include "DxLib.h"
 
-Enemy_Purple::Enemy_Purple()
+Enemy_Boss::Enemy_Boss()
 	: loaded_sprite_handle(0), chara_act(), enemyState(), ground(), bcp(), sampleObject_()
 {
 }
 
-Enemy_Purple::~Enemy_Purple()
+Enemy_Boss::~Enemy_Boss()
 {
 	Finalize();
 }
 
-void Enemy_Purple::Initialize()
+void Enemy_Boss::Initialize()
 {
 	__super::Initialize();
 
-	// 画像の読み込み
-	loaded_sprite_handle = LoadDivGraph(_T("Resources/Images/murasuke.bmp"), 12, 4, 3, 40, 48, chara_act);
+	// ボス画像の読み込み
+	loaded_sprite_handle = LoadDivGraph(_T("Resources/Images/murasuke_boss.bmp"), 24, 4, 6, 40, 48, chara_act);
 
 	// サウンド読み込み
 	hitSound = LoadSoundMem("Resources/Sounds/hit.wav");
@@ -30,12 +36,47 @@ void Enemy_Purple::Initialize()
 
 	ground = new Ground();
 	bcp = new BoxCollisionParams();
+
+	// インスタンス生成
+	for (int i = 0; i < apple_number; i++)
+	{
+		gimmick_apple[i] = new Gimmick_Apple();
+		Vector2D vec;
+		vec.x = -250.f;
+		vec.y = -350.f;
+		gimmick_apple[i]->Initialize(vec, -1.f, -1.f, 1);
+		apple_pos[i] = vec;
+	}
+
+	// Attack1(弾幕)用のランダム変数生成
+	for (int i = 0; i < apple_number + 1; i++)
+	{
+		std::random_device rd; // ハードウェアの乱数ジェネレータを使用してシードを生成
+		std::mt19937 gen(rd()); // メルセンヌ・ツイスタ法を使用する乱数生成器
+		std::uniform_real_distribution<float> distribution(-8.f, 8.f); // 1.0から10.0までのfloatを生成する分布
+
+		random_number = distribution(gen); // ランダムなfloatを生成
+		randomVal[i] = (random_number);
+	}
+
+	// ボスが出すリンゴ弾の初期座標更新
+	Vector2D vec;
+	vec.x = -150.f;
+	vec.y = -350.f;
+	//vec.x = GetPosition().x - 100.f;
+	//vec.y = GetPosition().y - 250.f;
+	gimmick_apple_2 = new Gimmick_Apple();
+	gimmick_apple_2->Initialize(vec, -1.f, -1.f, 1);
+	
+	apple_pos_2 = vec;
+	gimmick_apple_2->SetPosition(apple_pos_2);
+
 	gravity.y = .2f;
 
-	// 初期座標設定
+	// ボス初期座標設定
 	Vector2D initialVec;
-	initialVec.x = 500.f;
-	initialVec.y = 400.f;
+	initialVec.x = -100.f;
+	initialVec.y = -280.f;
 	SetPosition(initialVec);
 
 	// サンプルシーンからサンプルオブジェクトを取ってくる
@@ -45,9 +86,12 @@ void Enemy_Purple::Initialize()
 	prevPosition_x = position.x;
 	prevPosition_y = position.y;
 	isLeftDir = true;
+
+	// サウンド読み込み
+	fallSound = LoadSoundMem("Resources/Sounds/fall.wav");
 }
 
-void Enemy_Purple::Update(float delta_seconds)
+void Enemy_Boss::Update(float delta_seconds)
 {
 	__super::Update(delta_seconds);
 	if (isDead)
@@ -57,11 +101,14 @@ void Enemy_Purple::Update(float delta_seconds)
 
 	EnemyState currentState = enemyState;
 
+	// 方向をキャッシュ(Attack1で使用)
+	isPrevLeftDir = isLeftDir;
+
 	// 約1フレーム前の位置を覚えておき、コリジョン用に使う
 	prev_x = GetPosition().x;
 	prev_y = GetPosition().y;
-	
-	// 左右に往復する
+
+	// 往復移動
 	Move(delta_seconds);
 
 	// プレイヤーと接触
@@ -73,16 +120,32 @@ void Enemy_Purple::Update(float delta_seconds)
 	// ブロックの当たり判定
 	DetectMapchip();
 
+	// 攻撃
+	if (sampleObject_->GetPosition().x < -15.f && sampleObject_->GetPosition().x > -600.f &&
+		sampleObject_->GetPosition().y < -75.f && sampleObject_->GetPosition().y > -450.f)
+	{
+		if (hp > 15)
+		{
+			Attack1(delta_seconds);
+		}
+		else
+		{
+			Attack2(delta_seconds);
+			apple_finalize();
+		}
+	}
+
 	if (enemyState != currentState) // アニメーションフレームがそれぞれ違うのでここで初期化
 	{
 		act_index = 0;
 	}
 }
 
-void Enemy_Purple::Draw(const Vector2D& screen_offset)
+void Enemy_Boss::Draw(const Vector2D& screen_offset)
 {
 	__super::Draw(screen_offset);
 
+	// 画像の描画
 	int x, y;
 	GetPosition().ToInt(x, y);
 	Chara_AnimFrame();
@@ -112,49 +175,148 @@ void Enemy_Purple::Draw(const Vector2D& screen_offset)
 		break;
 	}
 
-	// キャラ描画
-	DrawRotaGraph(x + screen_offset.x, y + screen_offset.y, 1, 0, chara_act[motion_index], true, !isTurnLeft);
+	// ボスキャラ描画
+	DrawExtendGraph(x - screen_offset.x - 300, y - screen_offset.y - 400, x - screen_offset.x + 150, y - screen_offset.y + 30, chara_act[motion_index], true);
+	// ボスキャラの描画範囲確認用
+	//DrawBox(x - screen_offset.x - 180, y - screen_offset.y - 200, x - screen_offset.x + 50, y - screen_offset.y + 30, 100, false);
+	//DrawBox(x - screen_offset.x - 120, y - screen_offset.y - 280, x - screen_offset.x - 20, y - screen_offset.y - 200, 100, false);
+
+	// リンゴ弾描画
+	for (int i = 0; i < apple_number; i++)
+	{
+		gimmick_apple[i]->Draw(screen_offset);
+	}
+	if (hp < 15)
+	{
+		gimmick_apple_2->Draw(screen_offset);
+	}
 }
 
-void Enemy_Purple::Finalize()
+/*
+*	終了時呼び出される
+*/
+void Enemy_Boss::Finalize()
 {
 	__super::Finalize();
 
 	// 画像の破棄
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < apple_number; i++)
 	{
 		DeleteGraph(chara_act[i]);
 	}
+	gimmick_apple_2->Finalize();
 }
 
 /*
 *	アニメーションフレームスピードの設定
 */
-void Enemy_Purple::Chara_AnimFrame()
+void Enemy_Boss::Chara_AnimFrame()
 {
+	// アニメーションフレームのスピードを設定しています
 	if (--act_wait <= 0)
 	{
 		act_index++;
-		act_wait = ACT_SPEED; // アニメーションスピード
-		act_index %= max_motion_index; // 0に戻す
+		act_wait = ACT_SPEED;
+		act_index %= max_motion_index;
+	}
+}
+
+/*
+*	こうげきの第一段階
+*	ランダム弾幕
+*/
+void Enemy_Boss::Attack1(float delta_seconds)
+{
+	// 往復のたびに弾幕攻撃をします
+	if (isPrevLeftDir == isLeftDir)
+	{
+		for (int i = 0; i < apple_number; ++i) {
+			apple_pos[i].x += randomVal[i];
+			apple_pos[i].y += randomVal[i + 1];
+			gimmick_apple[i]->SetPosition(apple_pos[i]);
+			gimmick_apple[i]->Update(delta_seconds);
+		}
+	}
+	else
+	{
+		ChangeVolumeSoundMem(255 * 30 / 100, fallSound);
+		PlaySoundMem(fallSound, DX_PLAYTYPE_BACK);
+
+		// 弾を初期位置に戻す
+		for (int i = 0; i < apple_number; ++i)
+		{
+			Vector2D vec;
+			vec.x = GetPosition().x - 100.f;
+			vec.y = GetPosition().y - 250.f;
+			apple_pos[i] = vec;
+		}
+		// 弾幕の進む方向を攻撃ごとにランダムで決める
+		for (int i = 0; i < apple_number + 1; i++)
+		{
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_real_distribution<float> distribution(-8.f, 8.f);
+
+			random_number = distribution(gen);
+			randomVal[i] = (random_number);
+		}
+	}
+}
+
+/*
+*	こうげきの第二段階
+*	追尾弾
+*/
+void Enemy_Boss::Attack2(float delta_seconds)
+{
+	// リンゴとプレイヤーを結ぶ直線を平行移動させて、原点からみた直線座標へ移動(atan2関数を使用するため)
+	double dx = sampleObject_->GetPosition().x - apple_pos_2.x;
+	double dy = sampleObject_->GetPosition().y - apple_pos_2.y;
+	// atan2関数を使用して角度を計算する
+	double angle = atan2(dy, dx);
+	// sin/cos関数を使用して、角度を-1~1の数値に変換して、ポジションに加算していく
+	apple_pos_2.x += static_cast<int>(3 * cos(angle));
+	apple_pos_2.y += static_cast<int>(3 * sin(angle));
+	gimmick_apple_2->SetPosition(apple_pos_2);
+	gimmick_apple_2->Update(delta_seconds);
+}
+
+/*
+*	リンゴを消して解放
+*/
+void Enemy_Boss::apple_finalize()
+{
+	for (int i = 0; i < apple_number; i++)
+	{
+		gimmick_apple[i]->Finalize();
 	}
 }
 
 /*
 *	プレイヤーと接触した時
 */
-void Enemy_Purple::HitPlayer()
+void Enemy_Boss::HitPlayer()
 {
 	int chara_x = static_cast<int>(sampleObject_->GetPosition().x - 14.f);
 	int chara_y = static_cast<int>(sampleObject_->GetPosition().y + 2.f);
 	int chara_width = static_cast<int>(sampleObject_->GetPosition().x - 14.f + 27);
 	int chara_height = static_cast<int>(sampleObject_->GetPosition().y + 2.f + 38);
-	int enemy_x = static_cast<int>(GetPosition().x - 14.f);
-	int enemy_y = static_cast<int>(GetPosition().y - 10.f);
-	int enemy_width = static_cast<int>(GetPosition().x - 14.f + 27);
-	int enemy_height = static_cast<int>(GetPosition().y - 10.f + 32);
+	int enemy_x = static_cast<int>(GetPosition().x - 180.f);
+	int enemy_y = static_cast<int>(GetPosition().y - 200.f);
+	int enemy_width = static_cast<int>(GetPosition().x + 50);
+	int enemy_height = static_cast<int>(GetPosition().y + 30);
 
-	// 敵コリジョン範囲と重なればプレーヤーが死ぬ
+	// 胴体のコリジョン範囲と重なればプレーヤーが死ぬ
+	if (bcp->CheckHit(chara_x, chara_y, chara_width, chara_height,
+		enemy_x, enemy_y, enemy_width, enemy_height))
+	{
+		sampleObject_->Dead();
+	}
+	// 耳のコリジョン範囲と重なればプレーヤーが死ぬ
+	enemy_x = static_cast<int>(GetPosition().x - 120.f);
+	enemy_y = static_cast<int>(GetPosition().y - 280.f);
+	enemy_width = static_cast<int>(GetPosition().x - 20);
+	enemy_height = static_cast<int>(GetPosition().y - 200);
 	if (bcp->CheckHit(chara_x, chara_y, chara_width, chara_height,
 		enemy_x, enemy_y, enemy_width, enemy_height))
 	{
@@ -165,7 +327,7 @@ void Enemy_Purple::HitPlayer()
 /*
 *	弾に被弾した時
 */
-void Enemy_Purple::HitBullet()
+void Enemy_Boss::HitBullet()
 {
 	for (int i = 0; i < 20; i++)
 	{
@@ -173,10 +335,10 @@ void Enemy_Purple::HitBullet()
 		int bullet_y = static_cast<int>(sampleObject_->GetBullet(i).y);
 		int bullet_width = static_cast<int>(sampleObject_->GetBullet(i).x + 1);
 		int bullet_height = static_cast<int>(sampleObject_->GetBullet(i).y + 1);
-		int enemy_x = static_cast<int>(GetPosition().x - 14.f);
-		int enemy_y = static_cast<int>(GetPosition().y - 10.f);
-		int enemy_width = static_cast<int>(GetPosition().x - 14.f + 27);
-		int enemy_height = static_cast<int>(GetPosition().y - 10.f + 32);
+		int enemy_x = static_cast<int>(GetPosition().x - 120.f);
+		int enemy_y = static_cast<int>(GetPosition().y - 280.f);
+		int enemy_width = static_cast<int>(GetPosition().x - 20);
+		int enemy_height = static_cast<int>(GetPosition().y - 200);
 
 		// 弾とキャラが重なった時HPを減らす
 		if (bcp->CheckHit(bullet_x, bullet_y, bullet_width, bullet_height,
@@ -216,7 +378,7 @@ void Enemy_Purple::HitBullet()
 /*
 *	マップチップに対するコリジョン判定
 */
-void Enemy_Purple::DetectMapchip()
+void Enemy_Boss::DetectMapchip()
 {
 	for (int j = 0; j < ground->GetNUM_MAP_Y(); j++) // 行数分回す
 	{
@@ -323,7 +485,7 @@ void Enemy_Purple::DetectMapchip()
 /*
 *	左右に往復する処理
 */
-void Enemy_Purple::Move(float delta_seconds)
+void Enemy_Boss::Move(float delta_seconds)
 {
 	Vector2D input_dir;
 	if (position.x >= prevPosition_x - 50.f && isLeftDir)

@@ -3,7 +3,7 @@
 #include "../Source/Utility/BoxCollisionParams.h"
 #include "../Source/Utility/SavePosition.h"
 #include "../Source/Scene/SampleScene/SampleScene.h"
-#include <algorithm> // std::max‚ğg—p‚·‚é‚½‚ß
+#include <algorithm>
 #include <random>
 #include <vector>
 #include <iostream>
@@ -13,12 +13,11 @@
 #include "DxLib.h"
 
 // ƒRƒŠƒWƒ‡ƒ“‚ğ•t‚¯‚½‚¢êŠ‚ğè“®‚Åİ’è ‘æ1ˆø”:xÀ•W, ‘æ‚Qˆø”:yÀ•W, ‘æ‚Rˆø”:xÀ•W+width, ‘æ‚Sˆø”:yÀ•W+height
-int colPosition[][4] = { { 0, 440, 800, 480 }, {512, 200, 512+32, 200+160} };
-
+//int colPosition[][4] = { { 0, 440, 800, 480 }, {512, 200, 512 + 32, 200 + 160} };
 
 SampleObject::SampleObject()
 	: loaded_sprite_handle(), chara_act(), motion_index(0), playerState(), playerDirection(), ground(), bcp(),
-	 jumpCount(0)
+	jumpCount(0)
 {
 }
 
@@ -38,6 +37,10 @@ void SampleObject::Initialize()
 	Vector2D initialVec;
 	initialVec.x = 100.f;
 	initialVec.y = 400.f;
+	//initialVec.x = -600.f;
+	//initialVec.y = 10.f;
+	//initialVec.x = 100.f;
+	//initialVec.y = -310.f;
 	SetPosition(initialVec);
 	// Œ»İ‚ÌÀ•W‚ğSavePositionƒNƒ‰ƒX‚ÉŠi”[
 	savePosition = SavePosition::GetSavePosition();
@@ -48,8 +51,9 @@ void SampleObject::Initialize()
 
 	ground = new Ground();
 	bcp = new BoxCollisionParams();
-	
+
 	gravity.y = .2f; // d—Í
+	playerDirection = PlayerDirection::RIGHT;
 
 	// ƒTƒEƒ“ƒh“Ç‚İ‚İ
 	gameOverSound = LoadSoundMem("Resources/Sounds/gameover.mp3");
@@ -72,7 +76,7 @@ void SampleObject::Initialize()
 		// ‰æ‘œ‚ğƒ[ƒh‚µAƒnƒ“ƒhƒ‹‚ğ”z—ñ‚ÉŠi”[
 		loaded_bcollon_handle[i] = LoadGraph(filename.str().c_str());
 	}
-	// €‘Ì‰æ‘œ‚ğ‚ÌˆÊ’u‚ğ¶¬
+	// €‘Ì‰æ‘œ‚ÌˆÊ’u‚ğƒ‰ƒ“ƒ_ƒ€‚Å¶¬
 	for (int i = 0; i < blood_num + 1; i++)
 	{
 		std::random_device rd; // ƒn[ƒhƒEƒFƒA‚Ì—”ƒWƒFƒlƒŒ[ƒ^‚ğg—p‚µ‚ÄƒV[ƒh‚ğ¶¬
@@ -80,6 +84,7 @@ void SampleObject::Initialize()
 		std::uniform_real_distribution<float> distribution(-20.0, 20.0); // 1.0‚©‚ç10.0‚Ü‚Å‚Ìfloat‚ğ¶¬‚·‚é•ª•z
 
 		random_number = distribution(gen); // ƒ‰ƒ“ƒ_ƒ€‚Èfloat‚ğ¶¬
+		// ¶¬‚³‚ê‚½’l‚ª¬‚³‚¢‚Æ‚«‚ÉÄ“x¶¬‚·‚é•â³
 		if (random_number <= .8f && random_number >= -.8f)
 		{
 			random_number = distribution(gen);
@@ -98,75 +103,32 @@ void SampleObject::Update(float delta_seconds)
 	}
 
 	PlayerState currentState = playerState;
-	Vector2D input_dir;
 
 	// ‘O‰ñ‚ÌˆÊ’u‚ğŠo‚¦‚Ä‚¨‚­
 	prev_x = GetPosition().x;
 	prev_y = GetPosition().y;
 
-
-	int leftButtonState = GetMouseInput();
-	// ƒ{ƒ^ƒ“‚ª—£‚³‚ê‚½uŠÔ‚ğŒŸ’m
-	if ((prevLeftButtonState & MOUSE_INPUT_LEFT) && !(leftButtonState & MOUSE_INPUT_LEFT)) {
-		// ƒ{ƒ^ƒ“‚ª—£‚³‚ê‚½‚Æ‚«‚Ìˆ—‚ğ‚±‚±‚É‹Lq‚·‚é
-		canShot = true;
-	}
-	prevLeftButtonState = leftButtonState; // Œ»İ‚Ìó‘Ô‚ğ•Û‘¶
-
-
-	if (CheckHitKey(KEY_INPUT_A) == 1) // ‰EˆÚ“®
-	{
-		input_dir.x = -1;
-		isTurnLeft = true;
-		if (isGround == true && !isAttacked)
-		{
-			playerState = PlayerState::RUN;
-		}
-		playerDirection = PlayerDirection::LEFT;
-	}
-	else if (CheckHitKey(KEY_INPUT_D) == 1) // ¶ˆÚ“®
-	{
-		input_dir.x = 1;
-		isTurnLeft = false;
-		if (isGround == true && !isAttacked)
-		{
-			playerState = PlayerState::RUN;
-		}
-		playerDirection = PlayerDirection::RIGHT;
-	}
-	else
-	{
-		if (isGround == true && !isAttacked)
-		{
-			playerState = PlayerState::IDLE;
-		}
-	}
-
 	// ËŒ‚
 	Attack(delta_seconds);
-	
+
 	// ‚Q’iƒWƒƒƒ“ƒv
 	Jump();
-	
+
 	// ƒAƒjƒ[ƒVƒ‡ƒ“ƒtƒŒ[ƒ€‚ª‚»‚ê‚¼‚êˆá‚¤‚Ì‚Å‚±‚±‚Å‰Šú‰»
 	if (playerState != currentState)
 	{
 		act_index = 0;
 	}
 
-	const float MOVEMENT_SPEED = 300.0f;
-	delta_position = input_dir.Normalize() * MOVEMENT_SPEED * delta_seconds;
-	SetPosition(GetPosition() + delta_position + yadd); // ƒLƒƒƒ‰À•W‚ÌXV
-	yadd.y += gravity.y + 10 * delta_seconds; // deltaSeconds‚Å‰Â•ÏƒtƒŒ[ƒ€‘Î‰
-	yadd.y = std::min(20.0f, std::max(0.0f, yadd.y));
+	// ˆÚ“®‚ÉŠÖ‚·‚éˆ—
+	Move(delta_seconds);
 
-	
 	/*
 	** ƒRƒŠƒWƒ‡ƒ“”»’èƒ^ƒCƒv‚P
 	* ”CˆÓ‚ÌêŠ‚Éè“®‚ÅƒRƒŠƒWƒ‡ƒ“‚ğİ’è‚·‚é
 	*/
 	//DetectManualMapchip();
-	
+
 	/*
 	** ƒRƒŠƒWƒ‡ƒ“”»’èƒ^ƒCƒv‚Q
 	* ƒ}ƒbƒvƒ`ƒbƒv‚Ì”Ô†‚ÅƒRƒŠƒWƒ‡ƒ“”»’è‚·‚é
@@ -238,8 +200,8 @@ void SampleObject::Draw(const Vector2D& screen_offset)
 		DrawGraph(bloodVec[70].x - screen_offset.x, bloodVec[70].y - screen_offset.y, loaded_bcollon_handle[6], true);
 		DrawGraph(bloodVec[80].x - screen_offset.x, bloodVec[80].y - screen_offset.y, loaded_bcollon_handle[7], true);
 		DrawGraph(bloodVec[90].x - screen_offset.x, bloodVec[90].y - screen_offset.y, loaded_bcollon_handle[8], true);
-		DrawGraph(bloodVec[1].x  - screen_offset.x, bloodVec[1].y  - screen_offset.y, loaded_bcollon_handle[9], true);
-		DrawGraph(bloodVec[2].x  - screen_offset.x, bloodVec[2].y  - screen_offset.y, loaded_bcollon_handle[10], true);
+		DrawGraph(bloodVec[1].x - screen_offset.x, bloodVec[1].y - screen_offset.y, loaded_bcollon_handle[9], true);
+		DrawGraph(bloodVec[2].x - screen_offset.x, bloodVec[2].y - screen_offset.y, loaded_bcollon_handle[10], true);
 	}
 
 	// ’e‰æ‘œ•`‰æ
@@ -247,25 +209,17 @@ void SampleObject::Draw(const Vector2D& screen_offset)
 	{
 		DrawCircle(bullet[i].x - screen_offset.x, bullet[i].y - screen_offset.y, 1, GetColor(255, 255, 255), TRUE);
 	}
-	
-	//DrawFormatString(0, 0, 100, "addyadd = %f", std::min(addyadd, 20.f));
-	//DrawFormatString(0, 100, 100, "¡“ú‚Ì“V‹C‚Í %f ‚Å‚·", GetPosition().x);
-	//DrawFormatString(0, 100, 100, "d—Í‰Á‘¬’l: %f ", yadd.y);
-	//DrawBox(static_cast<int>(GetPosition().x - 14.f), static_cast<int>(GetPosition().y + 2.f), static_cast<int>(GetPosition().x - 14.f + 27), static_cast<int>(GetPosition().y + 2.f + 38), 100, true);
-	//DrawBox(colPosition[0][0], colPosition[0][1], colPosition[0][2], 480, 400, true);
-	//DrawBox(colPosition[1][0], colPosition[1][1], colPosition[1][2], colPosition[1][3], 400, true);
-	
+
+	//DrawFormatString(0, 100, 100, "collon_x %f ", GetPosition().x);
+	//DrawFormatString(0, 200, 200, "collon_y %f ", GetPosition().y);
+
 	float pos_x = GetPosition().x;
 	float pos_y = GetPosition().y;
-	//int mapchip_x = i * ground->GetPOS_MAP_X() - ground->GetMAP_OFFSET_X();
-	//int mapchip_y = j * ground->GetPOS_MAP_Y() - ground->GetMAP_OFFSET_Y();
-	//int mapchip_width = i * ground->GetPOS_MAP_X() + ground->GetPOS_MAP_WIDTH() - ground->GetMAP_OFFSET_X();
-	//int mapchip_height = j * ground->GetPOS_MAP_Y() + ground->GetPOS_MAP_HEIGHT() - ground->GetMAP_OFFSET_Y();
 	int chara_x = static_cast<int>(pos_x - offset_pos_x);
 	int chara_y = static_cast<int>(pos_y + offset_pos_y);
 	int chara_width = static_cast<int>(pos_x - offset_pos_x + offset_pos_width);
 	int chara_height = static_cast<int>(pos_y + offset_pos_y + offset_pos_height);
-	DrawBox(chara_x, chara_y, chara_width, chara_height, 400, true);
+	//DrawBox(chara_x - screen_offset.x, chara_y - screen_offset.y, chara_width - screen_offset.x, chara_height - screen_offset.y, 400, true);
 }
 
 void SampleObject::Finalize()
@@ -277,6 +231,9 @@ void SampleObject::Finalize()
 	loaded_sprite_handle = 0;
 }
 
+/*
+*	ƒAƒjƒ[ƒVƒ‡ƒ“ƒtƒŒ[ƒ€ƒXƒs[ƒh‚Ìİ’è
+*/
 void SampleObject::Chara_AnimFrame()
 {
 	if (--act_wait <= 0)
@@ -287,8 +244,19 @@ void SampleObject::Chara_AnimFrame()
 	}
 }
 
+/*
+* ËŒ‚‚Ìˆ—
+*/
 void SampleObject::Attack(float delta_seconds)
 {
+	int leftButtonState = GetMouseInput();
+	// ƒ{ƒ^ƒ“‚ª—£‚³‚ê‚½uŠÔ‚ğŒŸ’m
+	if ((prevLeftButtonState & MOUSE_INPUT_LEFT) && !(leftButtonState & MOUSE_INPUT_LEFT)) {
+		// ƒ{ƒ^ƒ“‚ª—£‚³‚ê‚½‚Æ‚«‚Ìˆ—‚ğ‚±‚±‚É‹Lq‚·‚é
+		canShot = true;
+	}
+	prevLeftButtonState = leftButtonState; // Œ»İ‚Ìó‘Ô‚ğ•Û‘¶
+
 	// ’e‚Ì”­Ë(¶ƒNƒŠƒbƒN)
 	if (GetMouseInput() & MOUSE_INPUT_LEFT && canShot && !isDead)
 	{
@@ -348,6 +316,51 @@ void SampleObject::Attack(float delta_seconds)
 	}
 }
 
+/*
+*	ˆÚ“®ˆ—
+*/
+void SampleObject::Move(float delta_seconds)
+{
+	Vector2D input_dir;
+	if (CheckHitKey(KEY_INPUT_A) == 1) // ‰EˆÚ“®
+	{
+		input_dir.x = -1;
+		isTurnLeft = true;
+		if (isGround == true && !isAttacked)
+		{
+			playerState = PlayerState::RUN;
+		}
+		playerDirection = PlayerDirection::LEFT;
+	}
+	else if (CheckHitKey(KEY_INPUT_D) == 1) // ¶ˆÚ“®
+	{
+		input_dir.x = 1;
+		isTurnLeft = false;
+		if (isGround == true && !isAttacked)
+		{
+			playerState = PlayerState::RUN;
+		}
+		playerDirection = PlayerDirection::RIGHT;
+	}
+	else
+	{
+		if (isGround == true && !isAttacked)
+		{
+			playerState = PlayerState::IDLE;
+		}
+	}
+
+	// ƒ|ƒWƒVƒ‡ƒ“‚Ìİ’è
+	const float MOVEMENT_SPEED = 300.0f;
+	delta_position = input_dir.Normalize() * MOVEMENT_SPEED * delta_seconds;
+	SetPosition(GetPosition() + delta_position + yadd); // ƒLƒƒƒ‰À•W‚ÌXV
+	yadd.y += gravity.y + 10 * delta_seconds; // d—Í‚Ìİ’è
+	yadd.y = std::min(20.0f, std::max(0.0f, yadd.y));
+}
+
+/*
+*	ƒWƒƒƒ“ƒvˆ—s
+*/
 void SampleObject::Jump()
 {
 	if (CheckHitKey(KEY_INPUT_SPACE) == 1 && canJump == true && !isDead)
@@ -516,16 +529,19 @@ void SampleObject::DetectManualMapchip()
 	}*/
 }
 
+/*
+*	ƒ}ƒbƒvƒ`ƒbƒv‚É‘Î‚·‚éƒRƒŠƒWƒ‡ƒ“”»’è
+*/
 void SampleObject::DetectMapchip()
 {
-	for (int j = 0; j < 12; j++) // s”
+	for (int j = 0; j < ground->GetNUM_MAP_Y(); j++) // s”•ª‰ñ‚·
 	{
-		for (int i = 0; i < ground->GetNUM_MAP_X(); i++) { // —ñ”
+		for (int i = 0; i < ground->GetNUM_MAP_X(); i++) { // —ñ”•ª‰ñ‚·
 			// groundƒNƒ‰ƒX‚Ìƒ}ƒbƒv—p”z—ñ‚Ì”š‚ğæ‚Á‚Ä‚«‚ÄƒRƒŠƒWƒ‡ƒ“ŒvZ‚ğ‚·‚é
 			int no = ground->data[i + j * ground->GetNUM_MAP_X()];
 			if (no != 7 && no != 11 && no != 15 && no != 19)
 			{
-				// ƒ}ƒbƒv‚ÆƒLƒƒƒ‰‚ÌƒRƒŠƒWƒ‡ƒ“—pÀ•WŒvZ
+				// ƒ}ƒbƒv/ƒLƒƒƒ‰‚ÌƒRƒŠƒWƒ‡ƒ“—pÀ•W
 				int mapchip_x = i * ground->GetPOS_MAP_X() - ground->GetMAP_OFFSET_X();
 				int mapchip_y = j * ground->GetPOS_MAP_Y() - ground->GetMAP_OFFSET_Y();
 				int mapchip_width = i * ground->GetPOS_MAP_X() + ground->GetPOS_MAP_WIDTH() - ground->GetMAP_OFFSET_X();
@@ -535,26 +551,32 @@ void SampleObject::DetectMapchip()
 				int chara_width = static_cast<int>(GetPosition().x - offset_pos_x + offset_pos_width);
 				int chara_height = static_cast<int>(GetPosition().y + offset_pos_y + offset_pos_height);
 
-				// “–‚½‚è”»’è‚ª‚ ‚éê‡true
+				// ƒLƒƒƒ‰‚Æƒ}ƒbƒvƒ`ƒbƒv‚É‘Î‚·‚éƒRƒŠƒWƒ‡ƒ“”»’è
 				if (bcp->CheckHit(mapchip_x, mapchip_y, mapchip_width, mapchip_height, chara_x, chara_y, chara_width, chara_height))
 				{
-					// ƒLƒƒƒ‰‚ªƒ}ƒbƒvƒ`ƒbƒv‚Ìã‚©‚çƒLƒƒƒ‰‚ª“–‚½‚Á‚Ä‚¢‚é‚©‚ğ‚PƒtƒŒ[ƒ€‘O‚ÌÀ•W‚Æ”äŠr‚µ‚Äƒ`ƒFƒbƒN
+					// ã‚©‚ç“–‚½‚Á‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN
 					if (GetPosition().y >= prev_y)
 					{
 						// ƒRƒŠƒWƒ‡ƒ“‚Ì‚ ‚éƒ}ƒbƒvƒ`ƒbƒv‚ª•À‚ñ‚Å‚¢‚éê‡‚»‚ê‚ç‚ğ˜AŒ‹‚³‚¹‚Ä’·•ûŒ`‚Ì“–‚½‚è”»’è‚É‚·‚é
 						if (ground->data[i + j * ground->GetNUM_MAP_X()] != ground->data[i + (j - 1) * ground->GetNUM_MAP_X()])
 						{
-							// ƒ}ƒbƒvƒ`ƒbƒv‚æ‚èã‚©‚çƒLƒƒƒ‰‚ª‚ ‚½‚Á‚Ä‚¢‚é
-							if (j * 40 - 38 >= prev_y)
+							/*
+							*	ƒ}ƒbƒvƒ`ƒbƒv‚æ‚è‚àã‚©‚ç“–‚½‚Á‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN‚·‚é
+							*	‚»‚Ìê‡‚Ì‚İyÀ•W‚ğŒÅ’è‚·‚é
+							*/
+							// ƒ}ƒbƒvƒ`ƒbƒv‚Éã‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+							if ((j * 40 - 38) - ground->GetMAP_OFFSET_Y() >= prev_y)
 							{
 								HitFromAbove(j);
 							}
-							else // ƒ}ƒbƒvƒ`ƒbƒv‚æ‚è‰¡‚©‚çƒLƒƒƒ‰‚ª‚ ‚½‚Á‚Ä‚¢‚é
+							// ƒ}ƒbƒvƒ`ƒbƒv‚Éã‚©‚ç‚©‚Â‰¡‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+							else
 							{
 								HitFromSide();
 							}
 						}
-						else // ƒ}ƒbƒvƒ`ƒbƒv‚æ‚è‰¡‚©‚çƒLƒƒƒ‰‚ª‚ ‚½‚Á‚Ä‚¢‚é
+						// ƒ}ƒbƒvƒ`ƒbƒv‚Éã‚©‚ç‚©‚Â‰¡‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+						else
 						{
 							HitFromSide();
 						}
@@ -565,17 +587,23 @@ void SampleObject::DetectMapchip()
 						// ƒRƒŠƒWƒ‡ƒ“‚Ì‚ ‚éƒ}ƒbƒvƒ`ƒbƒv‚ª•À‚ñ‚Å‚¢‚éê‡‚»‚ê‚ç‚ğ˜AŒ‹‚³‚¹‚Ä’·•ûŒ`‚Ì“–‚½‚è”»’è‚É‚·‚é
 						if (ground->data[i + j * ground->GetNUM_MAP_X()] != ground->data[i + (j + 1) * ground->GetNUM_MAP_X()])
 						{
-							// ƒ}ƒbƒvƒ`ƒbƒv‚æ‚è‰º‚©‚çƒLƒƒƒ‰‚ª‚ ‚½‚Á‚Ä‚¢‚é
-							if ((j + 1) * 40.f <= prev_y + 2)
+							/*
+							*	ƒ}ƒbƒvƒ`ƒbƒv‚æ‚è‚à‰º‚©‚ç“–‚½‚Á‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN‚·‚é
+							*	‚»‚Ìê‡‚Ì‚İyÀ•W‚ğŒÅ’è‚·‚é
+							*/
+							// ƒ}ƒbƒvƒ`ƒbƒv‚É‰º‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+							if (((j + 1) * 40.f) - ground->GetMAP_OFFSET_Y() <= prev_y + 2)
 							{
 								HitFromBelow(j);
 							}
-							else // ƒ}ƒbƒvƒ`ƒbƒv‚æ‚è‰¡‚©‚çƒLƒƒƒ‰‚ª‚ ‚½‚Á‚Ä‚¢‚é
+							// ƒ}ƒbƒvƒ`ƒbƒv‚É‰º‚©‚ç‚©‚Â‰¡‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+							else
 							{
 								HitFromSide();
 							}
 						}
-						else // ƒ}ƒbƒvƒ`ƒbƒv‚æ‚è‰¡‚©‚çƒLƒƒƒ‰‚ª‚ ‚½‚Á‚Ä‚¢‚é
+						// ƒ}ƒbƒvƒ`ƒbƒv‚É‰º‚©‚ç‚©‚Â‰¡‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+						else
 						{
 							HitFromSide();
 						}
@@ -586,11 +614,14 @@ void SampleObject::DetectMapchip()
 	}
 }
 
-void SampleObject::HitFromAbove(int j) // ƒ}ƒbƒvƒ`ƒbƒv‚Ìã‚©‚çƒLƒƒƒ‰‚ª“–‚½‚Á‚½
+/*
+*	ƒ}ƒbƒvƒ`ƒbƒv‚Ìã‚ÉƒLƒƒƒ‰‚ª“–‚½‚Á‚½
+*/
+void SampleObject::HitFromAbove(int j) 
 {
 	Vector2D vec;
 	vec.x = prev_x;
-	prev_y = static_cast<float>(j * 40 - 38); // yÀ•W‚ğŒÅ’è‚·‚é
+	prev_y = static_cast<float>((j * 40 - 38) - ground->GetMAP_OFFSET_Y()); // yÀ•W‚ğŒÅ’è‚·‚é
 	vec.y = prev_y;
 	if (GetPosition().y != prev_y)
 	{
@@ -598,23 +629,20 @@ void SampleObject::HitFromAbove(int j) // ƒ}ƒbƒvƒ`ƒbƒv‚Ìã‚©‚çƒLƒƒƒ‰‚ª“–‚½‚Á‚½
 	}
 	if (!isDead)
 	{
-		yadd.y = 0.0f;
+		yadd.y = 0.0f; // d—Í
 	}
 	// ƒWƒƒƒ“ƒv‚ÆƒxƒƒVƒeƒB‚Ìƒu[ƒ‹’lXV
-	canJump = true;
-	isJumping = false;
-	isJumpKeyLeave = false;
-	isJumpOnce = false;
-	isGround = true;
-	jumpTime = 0;
-	jump.y = 0;
+	GroundBool();
 }
 
+/*
+*	ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰º‚ÉƒLƒƒƒ‰‚ª“–‚½‚Á‚½
+*/
 void SampleObject::HitFromBelow(int j) // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰º‚©‚çƒLƒƒƒ‰‚ª“–‚½‚Á‚½
 {
 	Vector2D vec;
 	vec.x = GetPosition().x;
-	prev_y = (j + 1) * 40.f;
+	prev_y = ((j + 1) * 40.f) - ground->GetMAP_OFFSET_Y();
 	vec.y = prev_y;
 	if (GetPosition().y != prev_y) // yÀ•W‚ğŒÅ’è‚·‚é
 	{
@@ -622,10 +650,13 @@ void SampleObject::HitFromBelow(int j) // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰º‚©‚çƒLƒƒƒ‰‚ª“–‚½‚Á‚½
 	}
 	if (!isDead)
 	{
-		yadd.y = 0.0f;
+		yadd.y = 0.0f; // d—Í
 	}
 }
 
+/*
+*	ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚ÉƒLƒƒƒ‰‚ª“–‚½‚Á‚½
+*/
 void SampleObject::HitFromSide() // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚©‚çƒLƒƒƒ‰‚ª“–‚½‚Á‚½
 {
 	Vector2D vec;
@@ -650,6 +681,23 @@ void SampleObject::HitFromSide() // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚©‚çƒLƒƒƒ‰‚ª“–‚½‚Á‚½
 	}
 }
 
+/*
+*	’n–Ê‚ÉÚ’n‚ÌƒXƒe[ƒg
+*/
+void SampleObject::GroundBool()
+{
+	canJump = true; // ƒWƒƒƒ“ƒv‰Â”\‚©‚Ç‚¤‚©
+	isJumping = false; // Œ»İƒWƒƒƒ“ƒv‚µ‚Ä‚¢‚é‚©
+	isJumpKeyLeave = false; // ƒWƒƒƒ“ƒvƒL[‚ª—£‚³‚ê‚½‚©‚Ç‚¤‚©
+	isJumpOnce = false;// ˆê“xƒWƒƒƒ“ƒv‚µ‚½‚©‚Ç‚¤‚©
+	isGround = true; // ’n–Ê‚ÉÚ’n‚µ‚Ä‚¢‚é‚©
+	jumpTime = 0; // ƒWƒƒƒ“ƒv‚µ‚Ä‚¢‚éŠÔ(‚±‚Ì•b”‚Åã‚Éã‚ª‚é‚©‰º‚É‰º‚ª‚é‚©‚ğŒˆ‚ß‚Ä‚¢‚é)
+	jump.y = 0; // yÀ•W‚ÌƒxƒƒVƒeƒB
+}
+
+/*
+*	ƒQ[ƒ€ƒI[ƒo[‚Ì—¬ŒŒ•\Œ»‚Ìˆ—
+*/
 void SampleObject::Bleed()
 {
 	if (isDead)
@@ -669,21 +717,21 @@ void SampleObject::Bleed()
 		{
 			bloodVec[i].x += randomVal[i];
 			bloodVec[i].y += randomVal[i + 1];
-			// ŒŒ‚ÌƒAƒjƒ[ƒVƒ‡ƒ“‚Ìˆ×‚ÉV‚½‚ÈƒxƒƒVƒeƒB‚ğì¬‚µ‚Ä“K—p‚µ‚Ä‚¢‚Ü‚·(addyadd)B
+			// ŒŒ‚ÌƒAƒjƒ[ƒVƒ‡ƒ“‚Ìˆ×‚ÉV‚½‚ÈƒxƒƒVƒeƒB•Ï”‚ğì¬‚µ‚Ä“K—p‚µ‚Ä‚¢‚Ü‚·(addyadd)B
 			addyadd += yadd.y * 0.00001;
 			bloodVec[i].y += std::min(addyadd, 20.f);
 		}
 
 		// ŒŒ‚Æƒ}ƒbƒvƒ`ƒbƒv‚ÌƒRƒŠƒWƒ‡ƒ“‚ğ”»’è
-		for (int j = 0; j < 12; j++) // s”
+		for (int j = 0; j < ground->GetNUM_MAP_Y(); j++) // s”•ª‰ñ‚·
 		{
-			for (int i = 0; i < ground->GetNUM_MAP_X(); i++) { // —ñ”
+			for (int i = 0; i < ground->GetNUM_MAP_X(); i++) { // —ñ”•ª‰ñ‚·
 				int no = ground->data[i + j * ground->GetNUM_MAP_X()];
 				if (no != 7 && no != 11 && no != 15 && no != 19)
 				{
 					for (int k = 0; k < blood_num + 1; k++)
 					{
-						// ƒ}ƒbƒv‚ÆŒŒ‚ÌƒRƒŠƒWƒ‡ƒ“—pÀ•WŒvZ
+						// ƒ}ƒbƒv/ŒŒ‚ÌƒRƒŠƒWƒ‡ƒ“—pÀ•W
 						int mapchip_x = i * ground->GetPOS_MAP_X() - ground->GetMAP_OFFSET_X();
 						int mapchip_y = j * ground->GetPOS_MAP_Y() - ground->GetMAP_OFFSET_Y();
 						int mapchip_width = i * ground->GetPOS_MAP_X() + ground->GetPOS_MAP_WIDTH() - ground->GetMAP_OFFSET_X();
@@ -692,27 +740,34 @@ void SampleObject::Bleed()
 						int blood_y = static_cast<int>(bloodVec[k].y);
 						int blood_width = static_cast<int>(bloodVec[k].x + 1.f);
 						int blood_height = static_cast<int>(bloodVec[k].y + 1.f);
-						// “–‚½‚è”»’è‚ª‚ ‚éê‡true(ƒ}ƒbƒvƒ`ƒbƒv‚ÌÀ•W‚ÆƒTƒCƒY VS ŒŒ‚ÌÀ•W‚ÆƒTƒCƒY)
+
+						// ŒŒ‚Æƒ}ƒbƒvƒ`ƒbƒv‚É‘Î‚·‚éƒRƒŠƒWƒ‡ƒ“”»’è
 						if (bcp->CheckHit(mapchip_x, mapchip_y, mapchip_width, mapchip_height,
 							blood_x, blood_y, blood_width, blood_height))
 						{
-							// ŒŒ‚ªƒ}ƒbƒvƒ`ƒbƒv‚Ìã‚©‚çƒLƒƒƒ‰‚ª“–‚½‚Á‚Ä‚¢‚é‚©‚ğ‚PƒtƒŒ[ƒ€‘O‚ÌÀ•W‚Æ”äŠr‚µ‚Äƒ`ƒFƒbƒN
+							// ã‚©‚ç“–‚½‚Á‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN
 							if (bloodVec[k].y >= prev_blood_y[k])
 							{
 								// ƒRƒŠƒWƒ‡ƒ“‚Ì‚ ‚éƒ}ƒbƒvƒ`ƒbƒv‚ª•À‚ñ‚Å‚¢‚éê‡‚»‚ê‚ç‚ğ˜AŒ‹‚³‚¹‚Ä’·•ûŒ`‚Ì“–‚½‚è”»’è‚É‚·‚é
 								if (ground->data[i + j * ground->GetNUM_MAP_X()] != ground->data[i + (j - 1) * ground->GetNUM_MAP_X()])
 								{
-									// ƒ}ƒbƒvƒ`ƒbƒv‚æ‚èã‚©‚çŒŒ‚ª‚ ‚½‚Á‚Ä‚¢‚é
-									if (j * 40 - 1 >= prev_blood_y[k])
+									/*
+									*	ƒ}ƒbƒvƒ`ƒbƒv‚æ‚è‚àã‚©‚ç“–‚½‚Á‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN‚·‚é
+									*	‚»‚Ìê‡‚Ì‚İyÀ•W‚ğŒÅ’è‚·‚é
+									*/
+									// ƒ}ƒbƒvƒ`ƒbƒv‚Éã‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+									if ((j * 40 - 1) - ground->GetMAP_OFFSET_Y() >= prev_blood_y[k])
 									{
 										HitFromAbove_blood(j, k);
 									}
-									else // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚©‚çŒŒ‚ª‚ ‚½‚Á‚Ä‚¢‚é
+									// ƒ}ƒbƒvƒ`ƒbƒv‚Éã‚©‚ç‚©‚Â‰¡‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+									else
 									{
 										HitFromSide_blood(k);
 									}
 								}
-								else // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚©‚çŒŒ‚ª‚ ‚½‚Á‚Ä‚¢‚é
+								// ƒ}ƒbƒvƒ`ƒbƒv‚Éã‚©‚ç‚©‚Â‰¡‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+								else
 								{
 									HitFromSide_blood(k);
 								}
@@ -723,17 +778,23 @@ void SampleObject::Bleed()
 								// ƒRƒŠƒWƒ‡ƒ“‚Ì‚ ‚éƒ}ƒbƒvƒ`ƒbƒv‚ª•À‚ñ‚Å‚¢‚éê‡‚»‚ê‚ç‚ğ˜AŒ‹‚³‚¹‚Ä’·•ûŒ`‚Ì“–‚½‚è”»’è‚É‚·‚é
 								if (ground->data[i + j * ground->GetNUM_MAP_X()] != ground->data[i + (j + 1) * ground->GetNUM_MAP_X()])
 								{
-									// ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰º‚©‚çŒŒ‚ª‚ ‚½‚Á‚Ä‚¢‚é
-									if ((j + 1) * 40.f <= prev_blood_y[k] + 2)
+									/*
+									*	ƒ}ƒbƒvƒ`ƒbƒv‚æ‚è‚à‰º‚©‚ç“–‚½‚Á‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN‚·‚é
+									*	‚»‚Ìê‡‚Ì‚İyÀ•W‚ğŒÅ’è‚·‚é
+									*/
+									// ƒ}ƒbƒvƒ`ƒbƒv‚É‰º‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+									if (((j + 1) * 40.f) - ground->GetMAP_OFFSET_Y() <= prev_blood_y[k] + 2)
 									{
 										HitFromBelow_blood(j, k);
 									}
-									else // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚©‚çŒŒ‚ª‚ ‚½‚Á‚Ä‚¢‚é
+									// ƒ}ƒbƒvƒ`ƒbƒv‚É‰º‚©‚ç‚©‚Â‰¡‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+									else
 									{
 										HitFromSide_blood(k);
 									}
 								}
-								else // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚©‚çŒŒ‚ª‚ ‚½‚Á‚Ä‚¢‚é
+								// ƒ}ƒbƒvƒ`ƒbƒv‚É‰º‚©‚ç‚©‚Â‰¡‚©‚ç“–‚½‚Á‚Ä‚¢‚éê‡‚Ìƒ|ƒWƒVƒ‡ƒ“İ’è
+								else
 								{
 									HitFromSide_blood(k);
 								}
@@ -757,11 +818,14 @@ void SampleObject::Bleed()
 	}
 }
 
-void SampleObject::HitFromAbove_blood(int j, int k) // ƒ}ƒbƒvƒ`ƒbƒv‚Ìã‚©‚çŒŒ‚ª“–‚½‚Á‚½
+/*
+*	ƒ}ƒbƒvƒ`ƒbƒv‚Ìã‚ÉŒŒ‚ª“–‚½‚Á‚½
+*/
+void SampleObject::HitFromAbove_blood(int j, int k)
 {
 	Vector2D vec;
 	vec.x = prev_blood_x[k];
-	prev_blood_y[k] = static_cast<float>(j * 40 - 1);
+	prev_blood_y[k] = static_cast<float>((j * 40 - 1) - ground->GetMAP_OFFSET_Y());
 	vec.y = prev_blood_y[k];
 	if (bloodVec[k].y != prev_blood_y[k])
 	{
@@ -770,11 +834,14 @@ void SampleObject::HitFromAbove_blood(int j, int k) // ƒ}ƒbƒvƒ`ƒbƒv‚Ìã‚©‚çŒŒ‚ª“
 	}
 }
 
-void SampleObject::HitFromBelow_blood(int j, int k) // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰º‚©‚çŒŒ‚ª“–‚½‚Á‚½
+/*
+*	ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰º‚ÉŒŒ‚ª“–‚½‚Á‚½
+*/
+void SampleObject::HitFromBelow_blood(int j, int k)
 {
 	Vector2D vec;
 	vec.x = prev_blood_x[k];
-	prev_blood_y[k] = (j + 1) * 40.f;
+	prev_blood_y[k] = ((j + 1) * 40.f - ground->GetMAP_OFFSET_Y());
 	vec.y = prev_blood_y[k];
 	if (bloodVec[k].y != prev_blood_y[k])
 	{
@@ -783,7 +850,10 @@ void SampleObject::HitFromBelow_blood(int j, int k) // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰º‚©‚çŒŒ‚ª“
 	}
 }
 
-void SampleObject::HitFromSide_blood(int k) // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚©‚çŒŒ‚ª“–‚½‚Á‚½
+/*
+*	ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚ÉŒŒ‚ª“–‚½‚Á‚½
+*/
+void SampleObject::HitFromSide_blood(int k)
 {
 	Vector2D vec;
 	vec.y = bloodVec[k].y;
@@ -791,13 +861,16 @@ void SampleObject::HitFromSide_blood(int k) // ƒ}ƒbƒvƒ`ƒbƒv‚Ì‰¡‚©‚çŒŒ‚ª“–‚½‚Á‚½
 	_x /= 10;
 	_x *= 10;
 	vec.x = static_cast<float>(_x);
-	if (bloodVec[k].x != _x) // (GetPosition().x == _x)‚Ìê‡‰º‚©‚çã‚É‚·‚è”²‚¯‚é°‚É‚È‚é
+	if (bloodVec[k].x != _x)
 	{
 		bloodVec[k].x = vec.x;
 		bloodVec[k].y = vec.y;
 	}
 }
 
+/*
+*	ƒQ[ƒ€ƒI[ƒo[‚µ‚½
+*/
 void SampleObject::Dead()
 {
 	if (isDead == false)
@@ -805,11 +878,15 @@ void SampleObject::Dead()
 		StopSoundMem(bgm1);
 		ChangeVolumeSoundMem(255 * 30 / 100, gameOverSound);
 		PlaySoundMem(gameOverSound, DX_PLAYTYPE_BACK);
+		savePosition->SetDeathCount(1);
 	}
-	
+
 	isDead = true;
 }
 
+/*
+*	ƒNƒŠƒA‚µ‚½
+*/
 void SampleObject::Clear()
 {
 	if (isCleared == false)
@@ -823,6 +900,24 @@ void SampleObject::Clear()
 	isCleared = true;
 }
 
+/*
+*	‹UƒNƒŠƒA‚µ‚½
+*/
+void SampleObject::FakeClear()
+{
+	if (isCleared == false)
+	{
+		// ƒTƒEƒ“ƒh‚ğ–Â‚ç‚µ‚Ä–Â‚èI‚¦‚½‚çƒV[ƒ“‘JˆÚ
+		StopSoundMem(bgm1);
+		ChangeVolumeSoundMem(255 * 40 / 100, clearSound);
+		PlaySoundMem(clearSound, DX_PLAYTYPE_NORMAL);
+	}
+	isCleared = true;
+}
+
+/*
+*	ƒZ[ƒu‚Ìˆ—
+*/
 void SampleObject::Save()
 {
 	savePosition->SetCachePosition(GetPosition());

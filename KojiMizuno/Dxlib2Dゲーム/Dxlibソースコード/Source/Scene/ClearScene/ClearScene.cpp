@@ -1,4 +1,4 @@
-#include "TitleScene.h"
+#include "ClearScene.h"
 #include "../../SystemTypes.h"
 #include "../../GameObject/SampleObject/SampleObject.h"
 #include "../../GameObject/Enemy/Enemy_Purple.h"
@@ -6,16 +6,14 @@
 #include "DxLib.h"
 
 
-TitleScene::TitleScene()
+ClearScene::ClearScene()
 {
 }
 
-void TitleScene::Initialize()
+void ClearScene::Initialize()
 {
 	// 親クラスのInitialize()
 	__super::Initialize();
-	loaded_title_handle = LoadGraph("Resources/Images/title.jpg");
-	GraphFilter(loaded_title_handle, DX_GRAPH_FILTER_MONO, -60, 7);
 
 	// 白色の値を取得
 	Cr = GetColor(255, 255, 255);
@@ -23,25 +21,28 @@ void TitleScene::Initialize()
 	SetFontSize(32);
 	// フォントのタイプをエッジつきアンチエイリアスフォントに変更
 	ChangeFontType(DX_FONTTYPE_ANTIALIASING_EDGE);
+
+	savePosition = SavePosition::GetSavePosition();
 }
 
-SceneType TitleScene::Update(float delta_seconds)
+SceneType ClearScene::Update(float delta_seconds)
 {
 	// 親クラスのUpdate()
 	return __super::Update(delta_seconds);
 }
 
-void TitleScene::Draw()
+void ClearScene::Draw()
 {
 	// 親クラスのDraw()
 	__super::Draw();
 
-	DrawExtendGraph(0, 0, 640, 530, loaded_title_handle, true);
 	// 文字列の描画
-	DrawString(110, 300, "スペースキーでスタート", Cr);
+	DrawString(150, 150, "ゲームクリア!!", Cr);
+	DrawFormatString(150, 250, 100, "ゲームオーバー回数: %d ", savePosition->GetDeathCount());
+	DrawString(50, 350, "エンターキーを押してください", Cr);
 }
 
-void TitleScene::Finalize()
+void ClearScene::Finalize()
 {
 	// 親クラスのFinalize()
 	__super::Finalize();

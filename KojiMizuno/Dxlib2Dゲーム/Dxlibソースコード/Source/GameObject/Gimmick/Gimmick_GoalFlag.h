@@ -18,7 +18,7 @@ public:
 
 public:
 	//~ Begin GameObject interface
-	virtual void Initialize() override;
+	virtual void Initialize(Vector2D initialVec) override;
 	virtual void Update(float delta_seconds) override;
 	virtual void Draw(const Vector2D& screen_offset) override;
 	virtual void Finalize() override;
@@ -28,5 +28,6 @@ private:
 	SampleObject* sampleObject_;
 	BoxCollisionParams* bcp;
 	
-	int loaded_goal_flag;
+	// ‰æ‘œ
+	int loaded_goal_flag_handle;
 };

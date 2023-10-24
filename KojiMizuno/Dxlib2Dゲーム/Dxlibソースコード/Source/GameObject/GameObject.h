@@ -17,6 +17,7 @@ public:
 	 */
 	virtual void Initialize() {}
 	virtual void Initialize(Vector2D initialVec, float add_x, float add_y, int direction) {}
+	virtual void Initialize(Vector2D initialVec) {}
 
 	/**
 	 * çXêV

@@ -6,6 +6,7 @@
 #include "SceneBase.h"
 #include "SampleScene/SampleScene.h"
 #include "TitleScene/TitleScene.h"
+#include "ClearScene/ClearScene.h"
 
 SceneManager::SceneManager()
 	: current_scene(nullptr)
@@ -43,6 +44,14 @@ void SceneManager::Update(float DeltaSeconds)
 	// クリアしたらタイトルへ
 	if (current_scene->GetIsCleared())
 	{
+		ChangeScene(SceneType::CLEAR_SCENE);
+	}
+
+	if (CheckHitKey(KEY_INPUT_RETURN) == 1 && result_scene_type == SceneType::CLEAR_SCENE)
+	{
+		savePosition = SavePosition::GetSavePosition();
+		savePosition->InitialDeathCount();
+		savePosition->SetCachePosition(Vector2D(100.f, 400.f));
 		ChangeScene(SceneType::TITLE_SCENE);
 	}
 
@@ -112,6 +121,8 @@ SceneBase* SceneManager::CreateScene(SceneType new_scene_type)
 	{
 	case SceneType::TITLE_SCENE:
 		return new TitleScene();
+	case SceneType::CLEAR_SCENE:
+		return new ClearScene();
 	case SceneType::SAMPLE_SCENE:
 		return new SampleScene(); // SampleSceneクラスにアクセスしてクラスの取得
 	default:

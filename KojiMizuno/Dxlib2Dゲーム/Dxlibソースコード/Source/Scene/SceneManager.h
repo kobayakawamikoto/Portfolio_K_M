@@ -1,4 +1,5 @@
 #pragma once
+#include "../Source/Utility/SavePosition.h"
 
 // シーンタイプの前方宣言
 enum class SceneType : unsigned short;
@@ -52,4 +53,5 @@ private:
 private:
 	// 現在のシーン
 	class SceneBase* current_scene;
+	SavePosition* savePosition;
 };

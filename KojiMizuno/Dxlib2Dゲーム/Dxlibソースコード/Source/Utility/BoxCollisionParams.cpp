@@ -37,13 +37,3 @@ int BoxCollisionParams::CheckHit(int x1, int y1, int w1, int h1, int x2, int y2,
 	// ‚»‚êˆÈŠO‚Ìê‡‚Í“–‚½‚Á‚Ä‚¢‚é
 	return 1;
 }
-
-bool BoxCollisionParams::DetectMapchip(int player_x, int player_y, int player_width, int player_height, int player_prev_x, int player_prev_y)
-{
-	
-	return false;
-}
-
-void BoxCollisionParams::SetPosition(float pos_x, float pos_y, float width, float height)
-{
-}
